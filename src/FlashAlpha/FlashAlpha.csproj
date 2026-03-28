@@ -9,7 +9,7 @@
 
     <!-- NuGet package metadata -->
     <PackageId>FlashAlpha</PackageId>
-    <Version>0.2.0</Version>
+    <Version>0.2.1</Version>
     <Authors>FlashAlpha</Authors>
     <Company>FlashAlpha</Company>
     <Description>Official .NET SDK for the FlashAlpha options analytics API. Access gamma exposure (GEX), delta exposure (DEX), vanna exposure (VEX), charm exposure (CHEX), implied volatility, volatility surface, 0DTE analytics, Black-Scholes greeks, Kelly criterion sizing, and more. Supports SPX, SPY, QQQ, AAPL and all major US equities and indices.</Description>
