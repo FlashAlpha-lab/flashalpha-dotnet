@@ -1,0 +1,48 @@
+## .NET / C# .gitignore
+
+# Build outputs
+[Bb]in/
+[Oo]bj/
+
+# Visual Studio files
+.vs/
+*.user
+*.suo
+*.userprefs
+*.userosscache
+*.sln.docstates
+
+# Rider / JetBrains
+.idea/
+*.sln.iml
+
+# NuGet
+*.nupkg
+*.snupkg
+*.nuspec
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# Test results
+TestResults/
+[Tt]est[Rr]esult*/
+coverage*/
+*.coverage
+*.coveragexml
+
+# Publish profiles
+PublishProfiles/
+
+# MSBuild error logs
+*.binlog
+*.sarif
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment / secrets
+.env
+*.env.local
+appsettings.Development.json
