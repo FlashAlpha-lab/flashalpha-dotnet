@@ -392,6 +392,284 @@ public sealed class ClientTests
     }
 
     [Fact]
+    public async Task ScreenerAsync_SendsJsonContentType()
+    {
+        var (client, handler) = TestClientFactory.Create();
+        using (client) { await client.ScreenerAsync(new ScreenerRequest()); }
+        Assert.Equal("application/json", handler.LastRequest!.Content!.Headers.ContentType!.MediaType);
+    }
+
+    [Fact]
+    public async Task ScreenerAsync_EmptyRequestSerializesToEmptyObject()
+    {
+        var (client, handler) = TestClientFactory.Create();
+        using (client) { await client.ScreenerAsync(new ScreenerRequest()); }
+        var body = await handler.LastRequest!.Content!.ReadAsStringAsync();
+        // With null-ignoring serializer, empty request -> "{}"
+        Assert.Equal("{}", body);
+    }
+
+    [Fact]
+    public async Task ScreenerAsync_LeafFilter()
+    {
+        var (client, handler) = TestClientFactory.Create();
+        var request = new ScreenerRequest
+        {
+            Filters = new ScreenerLeaf { Field = "regime", Operator = "eq", Value = "positive_gamma" },
+        };
+        using (client) { await client.ScreenerAsync(request); }
+        var body = await handler.LastRequest!.Content!.ReadAsStringAsync();
+        Assert.Contains("\"field\":\"regime\"", body);
+        Assert.Contains("\"operator\":\"eq\"", body);
+        Assert.Contains("positive_gamma", body);
+    }
+
+    [Fact]
+    public async Task ScreenerAsync_OrGroup()
+    {
+        var (client, handler) = TestClientFactory.Create();
+        var request = new ScreenerRequest
+        {
+            Filters = new ScreenerGroup
+            {
+                Op = "or",
+                Conditions = new System.Collections.Generic.List<object>
+                {
+                    new ScreenerLeaf { Field = "vrp_regime", Operator = "eq", Value = "toxic_short_vol" },
+                    new ScreenerLeaf { Field = "vrp_regime", Operator = "eq", Value = "event_only" },
+                },
+            },
+        };
+        using (client) { await client.ScreenerAsync(request); }
+        var body = await handler.LastRequest!.Content!.ReadAsStringAsync();
+        Assert.Contains("\"op\":\"or\"", body);
+        Assert.Contains("toxic_short_vol", body);
+    }
+
+    [Fact]
+    public async Task ScreenerAsync_NestedAndInsideOr()
+    {
+        var (client, handler) = TestClientFactory.Create();
+        var request = new ScreenerRequest
+        {
+            Filters = new ScreenerGroup
+            {
+                Op = "or",
+                Conditions = new System.Collections.Generic.List<object>
+                {
+                    new ScreenerGroup
+                    {
+                        Op = "and",
+                        Conditions = new System.Collections.Generic.List<object>
+                        {
+                            new ScreenerLeaf { Field = "regime", Operator = "eq", Value = "positive_gamma" },
+                            new ScreenerLeaf { Field = "harvest_score", Operator = "gte", Value = 70 },
+                        },
+                    },
+                    new ScreenerGroup
+                    {
+                        Op = "and",
+                        Conditions = new System.Collections.Generic.List<object>
+                        {
+                            new ScreenerLeaf { Field = "regime", Operator = "eq", Value = "negative_gamma" },
+                            new ScreenerLeaf { Field = "atm_iv", Operator = "gte", Value = 50 },
+                        },
+                    },
+                },
+            },
+        };
+        using (client) { await client.ScreenerAsync(request); }
+        var body = await handler.LastRequest!.Content!.ReadAsStringAsync();
+        Assert.Contains("\"op\":\"or\"", body);
+        Assert.Contains("\"op\":\"and\"", body);
+        Assert.Contains("positive_gamma", body);
+        Assert.Contains("negative_gamma", body);
+    }
+
+    [Fact]
+    public async Task ScreenerAsync_BetweenOperator()
+    {
+        var (client, handler) = TestClientFactory.Create();
+        var request = new ScreenerRequest
+        {
+            Filters = new ScreenerLeaf { Field = "atm_iv", Operator = "between", Value = new[] { 15, 25 } },
+        };
+        using (client) { await client.ScreenerAsync(request); }
+        var body = await handler.LastRequest!.Content!.ReadAsStringAsync();
+        Assert.Contains("\"operator\":\"between\"", body);
+        Assert.Contains("[15,25]", body);
+    }
+
+    [Fact]
+    public async Task ScreenerAsync_InOperator()
+    {
+        var (client, handler) = TestClientFactory.Create();
+        var request = new ScreenerRequest
+        {
+            Filters = new ScreenerLeaf
+            {
+                Field = "term_state",
+                Operator = "in",
+                Value = new[] { "contango", "mixed" },
+            },
+        };
+        using (client) { await client.ScreenerAsync(request); }
+        var body = await handler.LastRequest!.Content!.ReadAsStringAsync();
+        Assert.Contains("\"operator\":\"in\"", body);
+        Assert.Contains("contango", body);
+        Assert.Contains("mixed", body);
+    }
+
+    [Fact]
+    public async Task ScreenerAsync_IsNotNullOperator_OmitsValue()
+    {
+        var (client, handler) = TestClientFactory.Create();
+        var request = new ScreenerRequest
+        {
+            Filters = new ScreenerLeaf { Field = "vrp_regime", Operator = "is_not_null" },
+        };
+        using (client) { await client.ScreenerAsync(request); }
+        var body = await handler.LastRequest!.Content!.ReadAsStringAsync();
+        Assert.Contains("\"operator\":\"is_not_null\"", body);
+        Assert.DoesNotContain("\"value\"", body);
+    }
+
+    [Fact]
+    public async Task ScreenerAsync_CascadingFilters()
+    {
+        var (client, handler) = TestClientFactory.Create();
+        var request = new ScreenerRequest
+        {
+            Filters = new ScreenerGroup
+            {
+                Op = "and",
+                Conditions = new System.Collections.Generic.List<object>
+                {
+                    new ScreenerLeaf { Field = "regime", Operator = "eq", Value = "positive_gamma" },
+                    new ScreenerLeaf { Field = "expiries.days_to_expiry", Operator = "lte", Value = 14 },
+                    new ScreenerLeaf { Field = "strikes.call_oi", Operator = "gte", Value = 2000 },
+                    new ScreenerLeaf { Field = "contracts.type", Operator = "eq", Value = "C" },
+                },
+            },
+            Select = new System.Collections.Generic.List<string> { "*" },
+        };
+        using (client) { await client.ScreenerAsync(request); }
+        var body = await handler.LastRequest!.Content!.ReadAsStringAsync();
+        Assert.Contains("expiries.days_to_expiry", body);
+        Assert.Contains("strikes.call_oi", body);
+        Assert.Contains("contracts.type", body);
+        Assert.Contains("\"select\":[\"*\"]", body);
+    }
+
+    [Fact]
+    public async Task ScreenerAsync_Formulas()
+    {
+        var (client, handler) = TestClientFactory.Create();
+        var request = new ScreenerRequest
+        {
+            Formulas = new System.Collections.Generic.List<ScreenerFormula>
+            {
+                new() { Alias = "vrp_ratio", Expression = "atm_iv / rv_20d" },
+            },
+            Filters = new ScreenerLeaf { Formula = "vrp_ratio", Operator = "gte", Value = 1.2 },
+            Sort = new System.Collections.Generic.List<ScreenerSort>
+            {
+                new() { Formula = "vrp_ratio", Direction = "desc" },
+            },
+        };
+        using (client) { await client.ScreenerAsync(request); }
+        var body = await handler.LastRequest!.Content!.ReadAsStringAsync();
+        Assert.Contains("\"alias\":\"vrp_ratio\"", body);
+        Assert.Contains("atm_iv / rv_20d", body);
+        Assert.Contains("\"formula\":\"vrp_ratio\"", body);
+    }
+
+    [Fact]
+    public async Task ScreenerAsync_MultiSort()
+    {
+        var (client, handler) = TestClientFactory.Create();
+        var request = new ScreenerRequest
+        {
+            Sort = new System.Collections.Generic.List<ScreenerSort>
+            {
+                new() { Field = "dealer_flow_risk", Direction = "asc" },
+                new() { Field = "harvest_score", Direction = "desc" },
+            },
+        };
+        using (client) { await client.ScreenerAsync(request); }
+        var body = await handler.LastRequest!.Content!.ReadAsStringAsync();
+        Assert.Contains("dealer_flow_risk", body);
+        Assert.Contains("\"direction\":\"asc\"", body);
+        Assert.Contains("\"direction\":\"desc\"", body);
+    }
+
+    [Fact]
+    public async Task ScreenerAsync_Pagination()
+    {
+        var (client, handler) = TestClientFactory.Create();
+        using (client) { await client.ScreenerAsync(new ScreenerRequest { Limit = 10, Offset = 10 }); }
+        var body = await handler.LastRequest!.Content!.ReadAsStringAsync();
+        Assert.Contains("\"limit\":10", body);
+        Assert.Contains("\"offset\":10", body);
+    }
+
+    [Fact]
+    public async Task ScreenerAsync_NegativeNumber()
+    {
+        var (client, handler) = TestClientFactory.Create();
+        var request = new ScreenerRequest
+        {
+            Filters = new ScreenerLeaf { Field = "net_gex", Operator = "lt", Value = -500000 },
+        };
+        using (client) { await client.ScreenerAsync(request); }
+        var body = await handler.LastRequest!.Content!.ReadAsStringAsync();
+        Assert.Contains("-500000", body);
+    }
+
+    [Fact]
+    public async Task ScreenerAsync_ParsesResponseStructure()
+    {
+        var responseBody = "{\"meta\":{\"total_count\":7,\"tier\":\"alpha\",\"universe_size\":250},\"data\":[{\"symbol\":\"SPY\",\"price\":656.01}]}";
+        var (client, _) = TestClientFactory.Create(body: responseBody);
+        using (client)
+        {
+            var result = await client.ScreenerAsync(new ScreenerRequest());
+            Assert.Equal("alpha", result.GetProperty("meta").GetProperty("tier").GetString());
+            Assert.Equal(7, result.GetProperty("meta").GetProperty("total_count").GetInt32());
+            Assert.Equal(656.01, result.GetProperty("data")[0].GetProperty("price").GetDouble());
+        }
+    }
+
+    [Fact]
+    public async Task ScreenerAsync_Throws_400_ValidationError()
+    {
+        var errBody = "{\"status\":\"ERROR\",\"error\":\"validation_error\",\"message\":\"Field 'harvest_score' requires the Alpha plan or higher.\"}";
+        var (client, _) = TestClientFactory.Create(statusCode: System.Net.HttpStatusCode.BadRequest, body: errBody);
+        using (client)
+        {
+            var request = new ScreenerRequest
+            {
+                Filters = new ScreenerLeaf { Field = "harvest_score", Operator = "gte", Value = 65 },
+            };
+            var ex = await Assert.ThrowsAsync<FlashAlphaException>(() => client.ScreenerAsync(request));
+            Assert.Contains("Alpha", ex.Message);
+        }
+    }
+
+    [Fact]
+    public async Task ScreenerAsync_Throws_403_TierRestricted()
+    {
+        var errBody = "{\"status\":\"ERROR\",\"error\":\"tier_restricted\",\"message\":\"Screener requires Growth plan.\",\"current_plan\":\"Free\",\"required_plan\":\"Growth\"}";
+        var (client, _) = TestClientFactory.Create(statusCode: System.Net.HttpStatusCode.Forbidden, body: errBody);
+        using (client)
+        {
+            var ex = await Assert.ThrowsAsync<TierRestrictedException>(() => client.ScreenerAsync(new ScreenerRequest()));
+            Assert.Equal("Free", ex.CurrentPlan);
+            Assert.Equal("Growth", ex.RequiredPlan);
+        }
+    }
+
+    [Fact]
     public async Task OptionsAsync_CallsCorrectPath()
     {
         var (client, handler) = TestClientFactory.Create();
