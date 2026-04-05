@@ -2,9 +2,11 @@
 
 Official .NET / C# client for the [FlashAlpha](https://flashalpha.com) options analytics API.
 
-Access gamma exposure (GEX), delta exposure (DEX), vanna exposure (VEX), charm exposure (CHEX),
-implied volatility, volatility surface, 0DTE analytics, Black-Scholes greeks, Kelly criterion
-position sizing, and more — for SPX, SPY, QQQ, AAPL, and all major US equities.
+Access a **live options screener** (filter/rank symbols by GEX, VRP, IV, greeks,
+harvest scores, and custom formulas), gamma exposure (GEX), delta exposure (DEX),
+vanna exposure (VEX), charm exposure (CHEX), implied volatility, volatility surface,
+0DTE analytics, Black-Scholes greeks, Kelly criterion position sizing, and more —
+for SPX, SPY, QQQ, AAPL, and all major US equities.
 
 - API documentation: https://lab.flashalpha.com/docs
 - Sign up for an API key: https://flashalpha.com
@@ -35,6 +37,22 @@ Console.WriteLine(greeks);
 
 // Health check (no API key required)
 var health = await client.HealthAsync();
+
+// Live options screener — harvestable VRP setups
+var screenResult = await client.ScreenerAsync(new ScreenerRequest
+{
+    Filters = new ScreenerGroup
+    {
+        Op = "and",
+        Conditions = new List<object>
+        {
+            new ScreenerLeaf { Field = "regime", Operator = "eq", Value = "positive_gamma" },
+            new ScreenerLeaf { Field = "harvest_score", Operator = "gte", Value = 65 },
+        },
+    },
+    Sort = new List<ScreenerSort> { new() { Field = "harvest_score", Direction = "desc" } },
+    Select = new List<string> { "symbol", "price", "harvest_score", "dealer_flow_risk" },
+});
 ```
 
 ## Constructor
@@ -191,9 +209,23 @@ dotnet test
 
 MIT. See [LICENSE](LICENSE).
 
+## Other SDKs
+
+| Language | Package | Repository |
+|----------|---------|------------|
+| Python | `pip install flashalpha` | [flashalpha-python](https://github.com/FlashAlpha-lab/flashalpha-python) |
+| JavaScript | `npm i flashalpha` | [flashalpha-js](https://github.com/FlashAlpha-lab/flashalpha-js) |
+| Java | Maven Central | [flashalpha-java](https://github.com/FlashAlpha-lab/flashalpha-java) |
+| Go | `go get github.com/FlashAlpha-lab/flashalpha-go` | [flashalpha-go](https://github.com/FlashAlpha-lab/flashalpha-go) |
+| MCP | Claude / LLM tool server | [flashalpha-mcp](https://github.com/FlashAlpha-lab/flashalpha-mcp) |
+
 ## Links
 
-- FlashAlpha home: https://flashalpha.com
-- API reference: https://lab.flashalpha.com/docs
-- Python SDK: https://github.com/FlashAlpha-lab/flashalpha-python
-- NuGet package: https://www.nuget.org/packages/FlashAlpha
+- [FlashAlpha](https://flashalpha.com) — API keys, docs, pricing
+- [API Documentation](https://flashalpha.com/docs)
+- [NuGet Package](https://www.nuget.org/packages/FlashAlpha)
+- [Examples](https://github.com/FlashAlpha-lab/flashalpha-examples) — runnable tutorials
+- [GEX Explained](https://github.com/FlashAlpha-lab/gex-explained) — gamma exposure theory and code
+- [0DTE Options Analytics](https://github.com/FlashAlpha-lab/0dte-options-analytics) — 0DTE pin risk, expected move, dealer hedging
+- [Volatility Surface Python](https://github.com/FlashAlpha-lab/volatility-surface-python) — SVI calibration, variance swap, skew analysis
+- [Awesome Options Analytics](https://github.com/FlashAlpha-lab/awesome-options-analytics) — curated resource list

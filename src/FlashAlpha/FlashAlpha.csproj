@@ -9,11 +9,11 @@
 
     <!-- NuGet package metadata -->
     <PackageId>FlashAlpha</PackageId>
-    <Version>0.2.1</Version>
+    <Version>0.3.0</Version>
     <Authors>FlashAlpha</Authors>
     <Company>FlashAlpha</Company>
-    <Description>Official .NET SDK for the FlashAlpha options analytics API. Access gamma exposure (GEX), delta exposure (DEX), vanna exposure (VEX), charm exposure (CHEX), implied volatility, volatility surface, 0DTE analytics, Black-Scholes greeks, Kelly criterion sizing, and more. Supports SPX, SPY, QQQ, AAPL and all major US equities and indices.</Description>
-    <PackageTags>options gamma-exposure gex greeks options-analytics implied-volatility 0dte volatility-surface delta-exposure vanna charm black-scholes kelly-criterion spx spy qqq</PackageTags>
+    <Description>Official .NET SDK for the FlashAlpha options analytics API. Live options screener, gamma exposure (GEX), delta exposure (DEX), vanna exposure (VEX), charm exposure (CHEX), VRP and harvest scores, implied volatility, volatility surface, 0DTE analytics, Black-Scholes greeks, Kelly criterion sizing, and more. Supports SPX, SPY, QQQ, AAPL and all major US equities and indices.</Description>
+    <PackageTags>options options-screener gamma-exposure gex greeks options-analytics implied-volatility 0dte volatility-surface delta-exposure vanna charm black-scholes kelly-criterion vrp harvest-score spx spy qqq</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://flashalpha.com</PackageProjectUrl>
     <RepositoryUrl>https://github.com/FlashAlpha-lab/flashalpha-dotnet</RepositoryUrl>

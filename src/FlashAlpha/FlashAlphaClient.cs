@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -69,6 +70,26 @@ public sealed class FlashAlphaClient : IDisposable
         var url = path + query;
 
         using var response = await _http.GetAsync(url, ct).ConfigureAwait(false);
+        return await HandleResponseAsync(response).ConfigureAwait(false);
+    }
+
+    private static readonly JsonSerializerOptions PostSerializerOptions = new()
+    {
+        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
+    };
+
+    private async Task<JsonElement> PostAsync(string path, object? body = null, CancellationToken ct = default)
+    {
+        HttpContent? content = null;
+        if (body is not null)
+        {
+            var json = JsonSerializer.Serialize(body, PostSerializerOptions);
+            content = new StringContent(json, Encoding.UTF8, "application/json");
+        }
+
+        // content ownership is transferred to HttpRequestMessage internally; it will be
+        // disposed when the response is disposed. Do NOT dispose explicitly here.
+        using var response = await _http.PostAsync(path, content, ct).ConfigureAwait(false);
         return await HandleResponseAsync(response).ConfigureAwait(false);
     }
 
@@ -382,6 +403,25 @@ public sealed class FlashAlphaClient : IDisposable
         => GetAsync("/v1/symbols", null, ct);
 
     // ── Account & System ──────────────────────────────────────────────────────
+
+    // ── Screener ──────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Live options screener — filter and rank symbols by gamma exposure, VRP,
+    /// volatility, greeks, and more. Powered by an in-memory store updated every
+    /// 5-10s from live market data. Growth: 10-symbol universe, up to 10 rows.
+    /// Alpha: ~250 symbols, up to 50 rows, formulas, and harvest/dealer-flow-risk scores.
+    /// </summary>
+    /// <param name="request">Screener request with filters, sort, select, formulas, limit, offset.</param>
+    public Task<JsonElement> ScreenerAsync(ScreenerRequest request, CancellationToken ct = default)
+        => PostAsync("/v1/screener/live", request, ct);
+
+    /// <summary>
+    /// Live options screener with raw object body (flexible alternative to ScreenerRequest).
+    /// Use this when you want full control over the JSON payload shape.
+    /// </summary>
+    public Task<JsonElement> ScreenerAsync(object body, CancellationToken ct = default)
+        => PostAsync("/v1/screener/live", body, ct);
 
     /// <summary>Account info and quota usage.</summary>
     public Task<JsonElement> AccountAsync(CancellationToken ct = default)

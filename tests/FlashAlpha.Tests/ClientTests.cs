@@ -338,6 +338,60 @@ public sealed class ClientTests
     }
 
     [Fact]
+    public async Task ScreenerAsync_PostsToCorrectPath()
+    {
+        var (client, handler) = TestClientFactory.Create();
+        using (client) { await client.ScreenerAsync(new ScreenerRequest()); }
+        Assert.Equal("/v1/screener/live", handler.LastRequest!.RequestUri!.AbsolutePath);
+        Assert.Equal("POST", handler.LastRequest.Method.Method);
+    }
+
+    [Fact]
+    public async Task ScreenerAsync_SerializesFiltersAndLimit()
+    {
+        var (client, handler) = TestClientFactory.Create();
+        var request = new ScreenerRequest
+        {
+            Filters = new ScreenerGroup
+            {
+                Op = "and",
+                Conditions = new System.Collections.Generic.List<object>
+                {
+                    new ScreenerLeaf { Field = "regime", Operator = "eq", Value = "positive_gamma" },
+                    new ScreenerLeaf { Field = "harvest_score", Operator = "gte", Value = 65 },
+                },
+            },
+            Sort = new System.Collections.Generic.List<ScreenerSort>
+            {
+                new() { Field = "harvest_score", Direction = "desc" },
+            },
+            Select = new System.Collections.Generic.List<string> { "symbol", "price", "harvest_score" },
+            Limit = 20,
+        };
+        using (client) { await client.ScreenerAsync(request); }
+
+        var body = await handler.LastRequest!.Content!.ReadAsStringAsync();
+        Assert.Contains("\"op\":\"and\"", body);
+        Assert.Contains("positive_gamma", body);
+        Assert.Contains("\"limit\":20", body);
+        Assert.Contains("harvest_score", body);
+    }
+
+    [Fact]
+    public async Task ScreenerAsync_WithRawObject_SerializesCorrectly()
+    {
+        var (client, handler) = TestClientFactory.Create();
+        using (client)
+        {
+            await client.ScreenerAsync((object)new { limit = 5, select = new[] { "symbol" } });
+        }
+
+        var body = await handler.LastRequest!.Content!.ReadAsStringAsync();
+        Assert.Contains("\"limit\":5", body);
+        Assert.Contains("symbol", body);
+    }
+
+    [Fact]
     public async Task OptionsAsync_CallsCorrectPath()
     {
         var (client, handler) = TestClientFactory.Create();
