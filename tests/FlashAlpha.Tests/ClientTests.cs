@@ -342,7 +342,7 @@ public sealed class ClientTests
     {
         var (client, handler) = TestClientFactory.Create();
         using (client) { await client.ScreenerAsync(new ScreenerRequest()); }
-        Assert.Equal("/v1/screener/live", handler.LastRequest!.RequestUri!.AbsolutePath);
+        Assert.Equal("/v1/screener", handler.LastRequest!.RequestUri!.AbsolutePath);
         Assert.Equal("POST", handler.LastRequest.Method.Method);
     }
 

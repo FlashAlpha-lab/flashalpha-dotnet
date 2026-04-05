@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 namespace FlashAlpha;
 
 /// <summary>
-/// Request body for the live options screener (<c>POST /v1/screener/live</c>).
+/// Request body for the live options screener (<c>POST /v1/screener</c>).
 /// All fields are optional — an empty request returns the default universe with
 /// default fields for your tier.
 /// </summary>

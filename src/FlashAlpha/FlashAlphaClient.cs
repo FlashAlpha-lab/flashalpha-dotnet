@@ -414,14 +414,14 @@ public sealed class FlashAlphaClient : IDisposable
     /// </summary>
     /// <param name="request">Screener request with filters, sort, select, formulas, limit, offset.</param>
     public Task<JsonElement> ScreenerAsync(ScreenerRequest request, CancellationToken ct = default)
-        => PostAsync("/v1/screener/live", request, ct);
+        => PostAsync("/v1/screener", request, ct);
 
     /// <summary>
     /// Live options screener with raw object body (flexible alternative to ScreenerRequest).
     /// Use this when you want full control over the JSON payload shape.
     /// </summary>
     public Task<JsonElement> ScreenerAsync(object body, CancellationToken ct = default)
-        => PostAsync("/v1/screener/live", body, ct);
+        => PostAsync("/v1/screener", body, ct);
 
     /// <summary>Account info and quota usage.</summary>
     public Task<JsonElement> AccountAsync(CancellationToken ct = default)
