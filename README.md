@@ -99,6 +99,7 @@ All methods return `Task<JsonElement>` and accept an optional `CancellationToken
 | `ExposureSummaryAsync(symbol)` | Full GEX/DEX/VEX/CHEX summary + hedging pressure | Growth+ |
 | `NarrativeAsync(symbol)` | AI-generated verbal narrative of exposure | Growth+ |
 | `ZeroDteAsync(symbol, strikeRange?)` | 0DTE regime, expected move, pin risk, hedging, decay | Growth+ |
+| `MaxPainAsync(symbol, expiration?)` | Max pain analysis with dealer alignment, pain curve, pin probability | Growth+ |
 | `ExposureHistoryAsync(symbol, days?)` | Daily exposure snapshots for trend analysis | Growth+ |
 
 ### Pricing and Sizing
