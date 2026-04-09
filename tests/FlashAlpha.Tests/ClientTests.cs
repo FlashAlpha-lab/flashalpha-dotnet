@@ -338,6 +338,57 @@ public sealed class ClientTests
     }
 
     [Fact]
+    public async Task MaxPainAsync_CallsCorrectPath()
+    {
+        var (client, handler) = TestClientFactory.Create();
+        using (client) { await client.MaxPainAsync("SPY"); }
+        Assert.Equal("/v1/maxpain/SPY", handler.LastRequest!.RequestUri!.AbsolutePath);
+        Assert.Equal("GET", handler.LastRequest.Method.Method);
+    }
+
+    [Fact]
+    public async Task MaxPainAsync_SendsExpirationParam()
+    {
+        var (client, handler) = TestClientFactory.Create();
+        using (client) { await client.MaxPainAsync("SPY", expiration: "2026-04-17"); }
+        Assert.Contains("expiration=2026-04-17", handler.LastRequest!.RequestUri!.Query);
+    }
+
+    [Fact]
+    public async Task MaxPainAsync_OmitsExpirationWhenNull()
+    {
+        var (client, handler) = TestClientFactory.Create();
+        using (client) { await client.MaxPainAsync("SPY"); }
+        Assert.DoesNotContain("expiration", handler.LastRequest!.RequestUri!.Query);
+    }
+
+    [Fact]
+    public async Task MaxPainAsync_ParsesResponse()
+    {
+        var body = "{\"max_pain_strike\":545,\"pin_probability\":68,\"dealer_alignment\":{\"alignment\":\"converging\"}}";
+        var (client, _) = TestClientFactory.Create(body: body);
+        using (client)
+        {
+            var result = await client.MaxPainAsync("SPY");
+            Assert.Equal(545, result.GetProperty("max_pain_strike").GetInt32());
+            Assert.Equal(68, result.GetProperty("pin_probability").GetInt32());
+            Assert.Equal("converging", result.GetProperty("dealer_alignment").GetProperty("alignment").GetString());
+        }
+    }
+
+    [Fact]
+    public async Task MaxPainAsync_Throws403TierRestricted()
+    {
+        var errBody = "{\"status\":\"ERROR\",\"error\":\"tier_restricted\",\"message\":\"Requires Growth.\",\"current_plan\":\"Free\",\"required_plan\":\"Growth\"}";
+        var (client, _) = TestClientFactory.Create(statusCode: System.Net.HttpStatusCode.Forbidden, body: errBody);
+        using (client)
+        {
+            var ex = await Assert.ThrowsAsync<TierRestrictedException>(() => client.MaxPainAsync("SPY"));
+            Assert.Equal("Free", ex.CurrentPlan);
+        }
+    }
+
+    [Fact]
     public async Task ScreenerAsync_PostsToCorrectPath()
     {
         var (client, handler) = TestClientFactory.Create();

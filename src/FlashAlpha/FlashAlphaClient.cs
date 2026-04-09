@@ -404,6 +404,17 @@ public sealed class FlashAlphaClient : IDisposable
 
     // ── Account & System ──────────────────────────────────────────────────────
 
+    // ── Max Pain ──────────────────────────────────────────────────────────────
+
+    /// <summary>Max pain analysis with dealer alignment, pain curve, OI breakdown,
+    /// expected move, pin probability, multi-expiry calendar. Requires Growth+.</summary>
+    public Task<JsonElement> MaxPainAsync(string symbol, string? expiration = null, CancellationToken ct = default)
+    {
+        var p = new Dictionary<string, string?>();
+        if (expiration is not null) p["expiration"] = expiration;
+        return GetAsync($"/v1/maxpain/{Uri.EscapeDataString(symbol)}", p.Count > 0 ? p : null, ct);
+    }
+
     // ── Screener ──────────────────────────────────────────────────────────────
 
     /// <summary>

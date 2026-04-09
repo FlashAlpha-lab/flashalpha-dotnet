@@ -123,6 +123,41 @@ public sealed class IntegrationTests
         Assert.Equal(JsonValueKind.Object, result.ValueKind);
     }
 
+    // ── Max Pain ──────────────────────────────────────────────────────────
+
+    [LiveFact]
+    public async Task MaxPain_SPY_ReturnsData()
+    {
+        using var client = CreateClient();
+        var result = await client.MaxPainAsync("SPY");
+        Assert.True(result.TryGetProperty("max_pain_strike", out _));
+        Assert.True(result.TryGetProperty("pain_curve", out _));
+        Assert.True(result.TryGetProperty("dealer_alignment", out _));
+        Assert.True(result.TryGetProperty("pin_probability", out _));
+    }
+
+    [LiveFact]
+    public async Task MaxPain_SPY_FieldsAreValid()
+    {
+        using var client = CreateClient();
+        var result = await client.MaxPainAsync("SPY");
+        var direction = result.GetProperty("distance").GetProperty("direction").GetString();
+        Assert.Contains(direction, new[] { "above", "below", "at" });
+        var signal = result.GetProperty("signal").GetString();
+        Assert.Contains(signal, new[] { "bullish", "bearish", "neutral" });
+    }
+
+    [LiveFact]
+    public async Task MaxPain_SPY_WithoutExpiration_HasMultiExpiry()
+    {
+        using var client = CreateClient();
+        var result = await client.MaxPainAsync("SPY");
+        if (result.TryGetProperty("max_pain_by_expiration", out var calendar) && calendar.ValueKind == JsonValueKind.Array)
+        {
+            Assert.True(calendar.GetArrayLength() > 0);
+        }
+    }
+
     // ── Screener ──────────────────────────────────────────────────────────
 
     [LiveFact]
