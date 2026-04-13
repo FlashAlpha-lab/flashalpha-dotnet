@@ -388,6 +388,38 @@ public sealed class FlashAlphaClient : IDisposable
     public Task<JsonElement> AdvVolatilityAsync(string symbol, CancellationToken ct = default)
         => GetAsync($"/v1/adv_volatility/{Uri.EscapeDataString(symbol)}", null, ct);
 
+    // ── VRP (Variance Risk Premium) ───────────────────────────────────────────
+
+    /// <summary>
+    /// Variance risk premium analytics — the implied-vs-realized vol spread,
+    /// conditioned on dealer gamma and vanna regime, with strategy scores
+    /// for harvesting. Requires Alpha+.
+    /// </summary>
+    /// <remarks>
+    /// The response is a nested object. Key access paths on the returned
+    /// <see cref="JsonElement"/>:
+    /// <list type="bullet">
+    ///   <item><c>result.GetProperty("symbol")</c>, <c>result.GetProperty("underlying_price")</c> — top-level</item>
+    ///   <item><c>result.GetProperty("vrp").GetProperty("z_score")</c>, <c>"percentile"</c>,
+    ///     <c>"atm_iv"</c>, <c>"rv_20d"</c>, <c>"vrp_20d"</c> — core VRP metrics
+    ///     (NOT at top level — common silent-null trap)</item>
+    ///   <item><c>result.GetProperty("directional").GetProperty("downside_vrp")</c>,
+    ///     <c>"upside_vrp"</c> — directional skew (NOT <c>put_vrp</c>/<c>call_vrp</c>)</item>
+    ///   <item><c>result.GetProperty("gex_conditioned").GetProperty("harvest_score")</c>,
+    ///     <c>"regime"</c>, <c>"interpretation"</c> — gamma-regime conditioning (nullable)</item>
+    ///   <item><c>result.GetProperty("regime").GetProperty("net_gex")</c>,
+    ///     <c>"gamma"</c>, <c>"vrp_regime"</c>, <c>"gamma_flip"</c> — regime snapshot
+    ///     (net_gex NOT at top level on this endpoint)</item>
+    ///   <item><c>result.GetProperty("strategy_scores")</c> — short_put_spread,
+    ///     short_strangle, iron_condor, calendar_spread (0–100, nullable)</item>
+    ///   <item><c>result.GetProperty("net_harvest_score")</c>,
+    ///     <c>result.GetProperty("dealer_flow_risk")</c> — top-level composite scores</item>
+    ///   <item><c>result.GetProperty("term_vrp")</c> — array of <c>{dte, iv, rv, vrp}</c></item>
+    /// </list>
+    /// </remarks>
+    public Task<JsonElement> VrpAsync(string symbol, CancellationToken ct = default)
+        => GetAsync($"/v1/vrp/{Uri.EscapeDataString(symbol)}", null, ct);
+
     // ── Reference Data ────────────────────────────────────────────────────────
 
     /// <summary>All available stock tickers.</summary>
