@@ -1,5 +1,11 @@
 ## .NET / C# .gitignore
 
+# Local tooling / secrets — never commit
+.claude/
+CLAUDE.md
+.env
+.env.*
+
 # Build outputs
 [Bb]in/
 [Oo]bj/
