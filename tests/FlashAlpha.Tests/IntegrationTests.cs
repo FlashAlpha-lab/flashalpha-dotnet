@@ -119,6 +119,191 @@ public sealed class IntegrationTests
     // distance-to-flip in dollars/sigmas, pin sub-scores, flow concentration,
     // wall strength + level cluster, the new liquidity & metadata sections,
     // and per-strike greeks/quotes. Uses SPX which has daily 0DTE.
+    /// <summary>
+    /// Comprehensive end-to-end test of <c>ZeroDteTypedAsync</c>. Every typed
+    /// property is asserted populated (non-null) so a renamed JsonPropertyName
+    /// would surface immediately. The full untyped-shape coverage lives in
+    /// <see cref="ZeroDte_SPX_IncludesAllNewFields"/>; this is the typed mirror.
+    /// </summary>
+    [LiveFact]
+    public async Task ZeroDteTyped_SPX_DeserializesAllFields()
+    {
+        using var client = CreateClient();
+        var r = await client.ZeroDteTypedAsync("SPX");
+        Assert.NotNull(r);
+        Assert.Equal("SPX", r.Symbol);
+
+        if (r.NoZeroDte == true)
+        {
+            Assert.NotNull(r.NextZeroDteExpiry);
+            return;
+        }
+
+        // top-level
+        Assert.NotNull(r.UnderlyingPrice);
+        Assert.NotNull(r.AsOf);
+        Assert.NotNull(r.MarketOpen);
+        // expiration / time_to_close_* are present even when null
+
+        // regime
+        Assert.NotNull(r.Regime);
+        Assert.NotNull(r.Regime!.Label);
+        Assert.NotNull(r.Regime.GammaFlip);
+        Assert.NotNull(r.Regime.SpotVsFlip);
+        Assert.NotNull(r.Regime.SpotToFlipPct);
+        Assert.NotNull(r.Regime.DistanceToFlipDollars);
+        Assert.NotNull(r.Regime.DistanceToFlipSigmas);
+
+        // exposures
+        Assert.NotNull(r.Exposures);
+        Assert.NotNull(r.Exposures!.NetGex);
+        Assert.NotNull(r.Exposures.NetDex);
+        Assert.NotNull(r.Exposures.NetVex);
+        Assert.NotNull(r.Exposures.NetChex);
+        Assert.NotNull(r.Exposures.PctOfTotalGex);
+        Assert.NotNull(r.Exposures.TotalChainNetGex);
+
+        // expected_move
+        Assert.NotNull(r.ExpectedMove);
+        Assert.NotNull(r.ExpectedMove!.Implied1SdDollars);
+        Assert.NotNull(r.ExpectedMove.Implied1SdPct);
+        Assert.NotNull(r.ExpectedMove.UpperBound);
+        Assert.NotNull(r.ExpectedMove.LowerBound);
+        Assert.NotNull(r.ExpectedMove.StraddlePrice);
+        Assert.NotNull(r.ExpectedMove.AtmIv);
+
+        // pin_risk
+        Assert.NotNull(r.PinRisk);
+        Assert.NotNull(r.PinRisk!.MagnetStrike);
+        Assert.NotNull(r.PinRisk.MagnetGex);
+        Assert.NotNull(r.PinRisk.DistanceToMagnetPct);
+        Assert.NotNull(r.PinRisk.PinScore);
+        Assert.NotNull(r.PinRisk.Components);
+        Assert.NotNull(r.PinRisk.Components!.OiScore);
+        Assert.NotNull(r.PinRisk.Components.ProximityScore);
+        Assert.NotNull(r.PinRisk.Components.TimeScore);
+        Assert.NotNull(r.PinRisk.Components.GammaScore);
+        Assert.NotNull(r.PinRisk.MaxPain);
+        Assert.NotNull(r.PinRisk.OiConcentrationTop3Pct);
+
+        // hedging — all 8 buckets + convexity_at_spot
+        Assert.NotNull(r.Hedging);
+        var buckets = new[]
+        {
+            (r.Hedging!.SpotUp10Bp, "SpotUp10Bp"), (r.Hedging.SpotDown10Bp, "SpotDown10Bp"),
+            (r.Hedging.SpotUp25Bp, "SpotUp25Bp"), (r.Hedging.SpotDown25Bp, "SpotDown25Bp"),
+            (r.Hedging.SpotUpHalfPct, "SpotUpHalfPct"), (r.Hedging.SpotDownHalfPct, "SpotDownHalfPct"),
+            (r.Hedging.SpotUp1Pct, "SpotUp1Pct"), (r.Hedging.SpotDown1Pct, "SpotDown1Pct"),
+        };
+        foreach (var (b, name) in buckets)
+        {
+            Assert.True(b is not null, $"hedging.{name} null");
+            Assert.NotNull(b!.DealerSharesToTrade);
+            Assert.NotNull(b.Direction);
+            Assert.NotNull(b.NotionalUsd);
+        }
+        Assert.NotNull(r.Hedging.ConvexityAtSpot);
+
+        // decay
+        Assert.NotNull(r.Decay);
+        Assert.NotNull(r.Decay!.NetThetaDollars);
+        Assert.NotNull(r.Decay.CharmRegime);
+        Assert.NotNull(r.Decay.CharmDescription);
+        Assert.NotNull(r.Decay.GammaAcceleration);
+
+        // vol_context
+        Assert.NotNull(r.VolContext);
+        Assert.NotNull(r.VolContext!.ZeroDteAtmIv);
+        Assert.NotNull(r.VolContext.SevenDteAtmIv);
+        Assert.NotNull(r.VolContext.IvRatio0Dte7Dte);
+        Assert.NotNull(r.VolContext.Vix);
+        Assert.NotNull(r.VolContext.VannaExposure);
+        Assert.NotNull(r.VolContext.VannaInterpretation);
+
+        // flow
+        Assert.NotNull(r.Flow);
+        Assert.NotNull(r.Flow!.TotalVolume);
+        Assert.NotNull(r.Flow.CallVolume);
+        Assert.NotNull(r.Flow.PutVolume);
+        Assert.NotNull(r.Flow.NetCallMinusPutVolume);
+        Assert.NotNull(r.Flow.TotalOi);
+        Assert.NotNull(r.Flow.CallOi);
+        Assert.NotNull(r.Flow.PutOi);
+        Assert.NotNull(r.Flow.PcRatioVolume);
+        Assert.NotNull(r.Flow.PcRatioOi);
+        Assert.NotNull(r.Flow.VolumeToOiRatio);
+        Assert.NotNull(r.Flow.AtmVolumeSharePct);
+        Assert.NotNull(r.Flow.Top3StrikeVolumePct);
+
+        // levels
+        Assert.NotNull(r.Levels);
+        Assert.NotNull(r.Levels!.CallWall);
+        Assert.NotNull(r.Levels.CallWallGex);
+        Assert.NotNull(r.Levels.CallWallStrength);
+        Assert.NotNull(r.Levels.DistanceToCallWallPct);
+        Assert.NotNull(r.Levels.PutWall);
+        Assert.NotNull(r.Levels.PutWallGex);
+        Assert.NotNull(r.Levels.PutWallStrength);
+        Assert.NotNull(r.Levels.DistanceToPutWallPct);
+        Assert.NotNull(r.Levels.DistanceToMagnetDollars);
+        Assert.NotNull(r.Levels.HighestOiStrike);
+        Assert.NotNull(r.Levels.HighestOiTotal);
+        Assert.NotNull(r.Levels.MaxPositiveGamma);
+        Assert.NotNull(r.Levels.MaxNegativeGamma);
+        Assert.NotNull(r.Levels.LevelClusterScore);
+
+        // liquidity
+        Assert.NotNull(r.Liquidity);
+        Assert.NotNull(r.Liquidity!.AtmSpreadPct);
+        Assert.NotNull(r.Liquidity.WeightedSpreadPct);
+        Assert.NotNull(r.Liquidity.ExecutionScore);
+
+        // metadata
+        Assert.NotNull(r.Metadata);
+        Assert.NotNull(r.Metadata!.SnapshotAgeSeconds);
+        Assert.NotNull(r.Metadata.ChainContractCount);
+        Assert.NotNull(r.Metadata.DataQualityScore);
+        Assert.NotNull(r.Metadata.GreekSmoothnessScore);
+
+        // strikes[0] — every per-strike field
+        Assert.NotNull(r.Strikes);
+        if (r.Strikes!.Count > 0)
+        {
+            var s = r.Strikes[0];
+            Assert.True(s.Strike > 0);
+            Assert.NotNull(s.DistanceFromSpotPct);
+            Assert.NotNull(s.CallSymbol);
+            Assert.NotNull(s.PutSymbol);
+            Assert.NotNull(s.CallGex);
+            Assert.NotNull(s.PutGex);
+            Assert.NotNull(s.NetGex);
+            Assert.NotNull(s.CallDex);
+            Assert.NotNull(s.PutDex);
+            Assert.NotNull(s.NetDex);
+            Assert.NotNull(s.NetVex);
+            Assert.NotNull(s.NetChex);
+            Assert.NotNull(s.CallOi);
+            Assert.NotNull(s.PutOi);
+            Assert.NotNull(s.CallVolume);
+            Assert.NotNull(s.PutVolume);
+            Assert.NotNull(s.GexSharePct);
+            Assert.NotNull(s.OiSharePct);
+            Assert.NotNull(s.VolumeSharePct);
+            Assert.NotNull(s.CallIv);
+            Assert.NotNull(s.PutIv);
+            Assert.NotNull(s.CallDelta);
+            Assert.NotNull(s.PutDelta);
+            Assert.NotNull(s.CallGamma);
+            Assert.NotNull(s.PutGamma);
+            Assert.NotNull(s.CallTheta);
+            Assert.NotNull(s.PutTheta);
+            Assert.NotNull(s.CallMid);
+            Assert.NotNull(s.PutMid);
+            Assert.NotNull(s.CallSpreadPct);
+            Assert.NotNull(s.PutSpreadPct);
+        }
+    }
+
     [LiveFact]
     public async Task ZeroDte_SPX_IncludesAllNewFields()
     {

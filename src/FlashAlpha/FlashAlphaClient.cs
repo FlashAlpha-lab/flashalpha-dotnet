@@ -289,6 +289,19 @@ public sealed class FlashAlphaClient : IDisposable
         return GetAsync($"/v1/exposure/zero-dte/{Uri.EscapeDataString(symbol)}", p.Count > 0 ? p : null, ct);
     }
 
+    /// <summary>
+    /// Strongly-typed variant of <see cref="ZeroDteAsync(string, double?, CancellationToken)"/>.
+    /// Returns a <see cref="ZeroDteResponse"/> POCO with snake_case → PascalCase field
+    /// mappings for every documented field. The original <see cref="ZeroDteAsync(string, double?, CancellationToken)"/>
+    /// remains unchanged.
+    /// </summary>
+    public async Task<ZeroDteResponse> ZeroDteTypedAsync(string symbol, double? strikeRange = null, CancellationToken ct = default)
+    {
+        var element = await ZeroDteAsync(symbol, strikeRange, ct).ConfigureAwait(false);
+        var typed = element.Deserialize<ZeroDteResponse>(PostSerializerOptions);
+        return typed ?? new ZeroDteResponse();
+    }
+
     /// <summary>Daily exposure snapshots for trend analysis. Requires Growth+.</summary>
     public Task<JsonElement> ExposureHistoryAsync(string symbol, int? days = null, CancellationToken ct = default)
     {
