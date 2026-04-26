@@ -115,6 +115,137 @@ public sealed class IntegrationTests
         Assert.Equal(JsonValueKind.Object, result.ValueKind);
     }
 
+    // Validate the full 0DTE response shape — fine-grained hedging buckets,
+    // distance-to-flip in dollars/sigmas, pin sub-scores, flow concentration,
+    // wall strength + level cluster, the new liquidity & metadata sections,
+    // and per-strike greeks/quotes. Uses SPX which has daily 0DTE.
+    [LiveFact]
+    public async Task ZeroDte_SPX_IncludesAllNewFields()
+    {
+        using var client = CreateClient();
+        var r = await client.ZeroDteAsync("SPX");
+        Assert.Equal("SPX", r.GetProperty("symbol").GetString());
+
+        if (r.TryGetProperty("no_zero_dte", out var noZ) && noZ.ValueKind == JsonValueKind.True)
+        {
+            Assert.True(r.TryGetProperty("next_zero_dte_expiry", out _));
+            return;
+        }
+
+        // top-level
+        foreach (var key in new[] { "underlying_price", "expiration", "as_of", "market_open",
+                                    "time_to_close_hours", "time_to_close_pct" })
+            Assert.True(r.TryGetProperty(key, out _), $"top-level {key} missing");
+
+        // regime
+        var regime = r.GetProperty("regime");
+        foreach (var key in new[] { "label", "description", "gamma_flip", "spot_vs_flip", "spot_to_flip_pct",
+                                    "distance_to_flip_dollars", "distance_to_flip_sigmas" })
+            Assert.True(regime.TryGetProperty(key, out _), $"regime.{key} missing");
+
+        // exposures
+        var exposures = r.GetProperty("exposures");
+        foreach (var key in new[] { "net_gex", "net_dex", "net_vex", "net_chex",
+                                    "pct_of_total_gex", "total_chain_net_gex" })
+            Assert.True(exposures.TryGetProperty(key, out _), $"exposures.{key} missing");
+
+        // expected_move
+        var em = r.GetProperty("expected_move");
+        foreach (var key in new[] { "implied_1sd_dollars", "implied_1sd_pct", "remaining_1sd_dollars",
+                                    "remaining_1sd_pct", "upper_bound", "lower_bound",
+                                    "straddle_price", "atm_iv" })
+            Assert.True(em.TryGetProperty(key, out _), $"expected_move.{key} missing");
+
+        // pin_risk
+        var pr = r.GetProperty("pin_risk");
+        foreach (var key in new[] { "magnet_strike", "magnet_gex", "distance_to_magnet_pct",
+                                    "pin_score", "components", "max_pain",
+                                    "oi_concentration_top3_pct", "description" })
+            Assert.True(pr.TryGetProperty(key, out _), $"pin_risk.{key} missing");
+        var components = pr.GetProperty("components");
+        foreach (var key in new[] { "oi_score", "proximity_score", "time_score", "gamma_score" })
+            Assert.True(components.TryGetProperty(key, out _), $"pin_risk.components.{key} missing");
+
+        // hedging — fine-grained buckets + convexity
+        var hedging = r.GetProperty("hedging");
+        foreach (var bucket in new[] { "spot_up_10bp", "spot_down_10bp",
+                                       "spot_up_25bp", "spot_down_25bp",
+                                       "spot_up_half_pct", "spot_down_half_pct",
+                                       "spot_up_1pct", "spot_down_1pct" })
+        {
+            Assert.True(hedging.TryGetProperty(bucket, out var b), $"hedging.{bucket} missing");
+            foreach (var key in new[] { "dealer_shares_to_trade", "direction", "notional_usd" })
+                Assert.True(b.TryGetProperty(key, out _), $"hedging.{bucket}.{key} missing");
+        }
+        Assert.True(hedging.TryGetProperty("convexity_at_spot", out _));
+
+        // decay
+        var decay = r.GetProperty("decay");
+        foreach (var key in new[] { "net_theta_dollars", "theta_per_hour_remaining", "charm_regime",
+                                    "charm_description", "gamma_acceleration", "description" })
+            Assert.True(decay.TryGetProperty(key, out _), $"decay.{key} missing");
+
+        // vol_context
+        var vc = r.GetProperty("vol_context");
+        foreach (var key in new[] { "zero_dte_atm_iv", "seven_dte_atm_iv", "iv_ratio_0dte_7dte",
+                                    "vix", "vanna_exposure", "vanna_interpretation", "description" })
+            Assert.True(vc.TryGetProperty(key, out _), $"vol_context.{key} missing");
+
+        // flow
+        var flow = r.GetProperty("flow");
+        foreach (var key in new[] { "total_volume", "call_volume", "put_volume",
+                                    "net_call_minus_put_volume",
+                                    "total_oi", "call_oi", "put_oi",
+                                    "pc_ratio_volume", "pc_ratio_oi", "volume_to_oi_ratio",
+                                    "atm_volume_share_pct", "top3_strike_volume_pct" })
+            Assert.True(flow.TryGetProperty(key, out _), $"flow.{key} missing");
+
+        // levels
+        var levels = r.GetProperty("levels");
+        foreach (var key in new[] { "call_wall", "call_wall_gex", "call_wall_strength",
+                                    "distance_to_call_wall_pct",
+                                    "put_wall", "put_wall_gex", "put_wall_strength",
+                                    "distance_to_put_wall_pct",
+                                    "distance_to_magnet_dollars",
+                                    "highest_oi_strike", "highest_oi_total",
+                                    "max_positive_gamma", "max_negative_gamma",
+                                    "level_cluster_score" })
+            Assert.True(levels.TryGetProperty(key, out _), $"levels.{key} missing");
+
+        // liquidity (new section)
+        var liquidity = r.GetProperty("liquidity");
+        foreach (var key in new[] { "atm_spread_pct", "weighted_spread_pct", "execution_score" })
+            Assert.True(liquidity.TryGetProperty(key, out _), $"liquidity.{key} missing");
+
+        // metadata (new section)
+        var metadata = r.GetProperty("metadata");
+        foreach (var key in new[] { "snapshot_age_seconds", "chain_contract_count",
+                                    "data_quality_score", "greek_smoothness_score" })
+            Assert.True(metadata.TryGetProperty(key, out _), $"metadata.{key} missing");
+
+        // per-strike entries
+        var strikes = r.GetProperty("strikes");
+        Assert.Equal(JsonValueKind.Array, strikes.ValueKind);
+        if (strikes.GetArrayLength() > 0)
+        {
+            var s = strikes[0];
+            foreach (var key in new[] { "strike", "distance_from_spot_pct",
+                                        "call_symbol", "put_symbol",
+                                        "call_gex", "put_gex", "net_gex",
+                                        "call_dex", "put_dex", "net_dex",
+                                        "net_vex", "net_chex",
+                                        "call_oi", "put_oi", "call_volume", "put_volume",
+                                        "gex_share_pct", "oi_share_pct", "volume_share_pct",
+                                        "call_iv", "put_iv",
+                                        "call_delta", "put_delta",
+                                        "call_gamma", "put_gamma",
+                                        "call_theta", "put_theta",
+                                        "call_mid", "put_mid",
+                                        "call_spread_pct", "put_spread_pct" })
+                Assert.True(s.TryGetProperty(key, out _), $"strikes[0].{key} missing");
+        }
+    }
+
     [LiveFact]
     public async Task Volatility_SPY_ReturnsData()
     {
