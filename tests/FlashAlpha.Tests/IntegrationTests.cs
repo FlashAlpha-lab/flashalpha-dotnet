@@ -762,24 +762,52 @@ public sealed class IntegrationTests
     }
 
     [LiveFact]
-    public async Task ExposureSummary_NetGex_IsUnderExposures()
+    public async Task ExposureSummary_EveryFieldDeclaredInPocoMustBeReferenced()
     {
         using var client = CreateClient();
         var r = await client.ExposureSummaryAsync("SPY");
-        Assert.Equal("SPY", r.GetProperty("symbol").GetString());
+        // Original bug #1 — top-level net_gex must NOT exist (customer-trap)
         Assert.False(r.TryGetProperty("net_gex", out _), "net_gex must NOT be top-level (customer trap)");
-
+        // ── top-level scalars ──
+        Assert.Equal("SPY", r.GetProperty("symbol").GetString());
+        Assert.Equal(JsonValueKind.Number, r.GetProperty("underlying_price").ValueKind);
+        Assert.Equal(JsonValueKind.String, r.GetProperty("as_of").ValueKind);
+        Assert.False(string.IsNullOrEmpty(r.GetProperty("as_of").GetString()));
+        Assert.Equal(JsonValueKind.Number, r.GetProperty("gamma_flip").ValueKind);
+        Assert.Contains(r.GetProperty("regime").GetString(),
+            new[] { "positive_gamma", "negative_gamma", "neutral", "undetermined" });
+        // ── exposures block (4 fields) ──
         var exp = r.GetProperty("exposures");
-        Assert.True(exp.TryGetProperty("net_gex", out var ng));
-        Assert.Equal(JsonValueKind.Number, ng.ValueKind);
-        foreach (var key in new[] { "net_dex", "net_vex", "net_chex" })
+        foreach (var key in new[] { "net_gex", "net_dex", "net_vex", "net_chex" })
+            Assert.Equal(JsonValueKind.Number, exp.GetProperty(key).ValueKind);
+        // ── interpretation block (3 fields) ──
+        var interp = r.GetProperty("interpretation");
+        foreach (var key in new[] { "gamma", "vanna", "charm" })
         {
-            if (exp.TryGetProperty(key, out var v) && v.ValueKind != JsonValueKind.Null)
-                Assert.Equal(JsonValueKind.Number, v.ValueKind);
+            Assert.Equal(JsonValueKind.String, interp.GetProperty(key).ValueKind);
+            Assert.False(string.IsNullOrEmpty(interp.GetProperty(key).GetString()));
         }
-
-        Assert.True(r.TryGetProperty("regime", out var regimeProp));
-        Assert.Contains(regimeProp.GetString(), new[] { "positive_gamma", "negative_gamma", "neutral" });
+        // ── hedging_estimate (every leaf on both sides) ──
+        var h = r.GetProperty("hedging_estimate");
+        foreach (var sideKey in new[] { "spot_up_1pct", "spot_down_1pct" })
+        {
+            var side = h.GetProperty(sideKey);
+            Assert.Contains(side.GetProperty("direction").GetString(), new[] { "buy", "sell" });
+            Assert.Equal(JsonValueKind.Number, side.GetProperty("dealer_shares_to_trade").ValueKind);
+            Assert.Equal(JsonValueKind.Number, side.GetProperty("notional_usd").ValueKind);
+            Assert.NotEqual(0, side.GetProperty("notional_usd").GetInt64());
+        }
+        var up = h.GetProperty("spot_up_1pct").GetProperty("dealer_shares_to_trade").GetInt64();
+        var down = h.GetProperty("spot_down_1pct").GetProperty("dealer_shares_to_trade").GetInt64();
+        Assert.Equal(up, -down);
+        // ── zero_dte block (3 fields) ──
+        var z = r.GetProperty("zero_dte");
+        Assert.True(z.TryGetProperty("net_gex", out var zng));
+        Assert.True(zng.ValueKind == JsonValueKind.Null || zng.ValueKind == JsonValueKind.Number);
+        Assert.True(z.TryGetProperty("pct_of_total_gex", out var zpct));
+        Assert.True(zpct.ValueKind == JsonValueKind.Null || zpct.ValueKind == JsonValueKind.Number);
+        Assert.True(z.TryGetProperty("expiration", out var zexp));
+        Assert.True(zexp.ValueKind == JsonValueKind.Null || zexp.ValueKind == JsonValueKind.String);
     }
 
     // Issue #2 — Field naming. Customer used put_vrp/call_vrp. Canonical
