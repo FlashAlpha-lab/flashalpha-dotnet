@@ -711,6 +711,80 @@ public sealed class IntegrationTests
         }
     }
 
+    [LiveFact]
+    public async Task Vrp_EveryFieldDeclaredInPocoMustBeReferenced()
+    {
+        using var client = CreateClient();
+        var r = await client.VrpAsync("SPY");
+
+        // Customer traps: must NOT be top-level
+        foreach (var trap in new[] { "z_score", "percentile", "atm_iv", "net_gex", "put_vrp", "call_vrp", "harvest_score" })
+            Assert.False(r.TryGetProperty(trap, out _), $"{trap} must NOT be top-level");
+
+        // ── top-level scalars ──
+        Assert.Equal("SPY", r.GetProperty("symbol").GetString());
+        Assert.Equal(JsonValueKind.Number, r.GetProperty("underlying_price").ValueKind);
+        Assert.Equal(JsonValueKind.String, r.GetProperty("as_of").ValueKind);
+        Assert.Equal(JsonValueKind.Number, r.GetProperty("variance_risk_premium").ValueKind);
+        Assert.Equal(JsonValueKind.Number, r.GetProperty("convexity_premium").ValueKind);
+        Assert.Equal(JsonValueKind.Number, r.GetProperty("fair_vol").ValueKind);
+        Assert.Equal(JsonValueKind.Number, r.GetProperty("net_harvest_score").ValueKind);
+        Assert.Equal(JsonValueKind.Number, r.GetProperty("dealer_flow_risk").ValueKind);
+        Assert.Equal(JsonValueKind.Array, r.GetProperty("warnings").ValueKind);
+
+        // ── vrp.* core block ──
+        var core = r.GetProperty("vrp");
+        foreach (var k in new[] { "atm_iv", "rv_5d", "rv_10d", "rv_20d", "rv_30d",
+                                  "vrp_5d", "vrp_10d", "vrp_20d", "vrp_30d" })
+            Assert.Equal(JsonValueKind.Number, core.GetProperty(k).ValueKind);
+        Assert.Equal(JsonValueKind.Number, core.GetProperty("z_score").ValueKind);
+        Assert.Equal(JsonValueKind.Number, core.GetProperty("percentile").ValueKind);
+        Assert.Equal(JsonValueKind.Number, core.GetProperty("history_days").ValueKind);
+
+        // ── directional ──
+        var dir = r.GetProperty("directional");
+        foreach (var k in new[] { "put_wing_iv_25d", "call_wing_iv_25d",
+                                  "downside_rv_20d", "upside_rv_20d",
+                                  "downside_vrp", "upside_vrp" })
+            Assert.Equal(JsonValueKind.Number, dir.GetProperty(k).ValueKind);
+
+        // ── term_vrp[] ──
+        var term = r.GetProperty("term_vrp");
+        Assert.Equal(JsonValueKind.Array, term.ValueKind);
+        Assert.True(term.GetArrayLength() > 0);
+        var first = term[0];
+        foreach (var k in new[] { "dte", "iv", "rv", "vrp" })
+            Assert.True(first.TryGetProperty(k, out _));
+
+        // ── gex_conditioned + vanna_conditioned ──
+        var gc = r.GetProperty("gex_conditioned");
+        Assert.Equal(JsonValueKind.String, gc.GetProperty("regime").ValueKind);
+        Assert.Equal(JsonValueKind.Number, gc.GetProperty("harvest_score").ValueKind);
+        Assert.Equal(JsonValueKind.String, gc.GetProperty("interpretation").ValueKind);
+        var vc = r.GetProperty("vanna_conditioned");
+        Assert.Equal(JsonValueKind.String, vc.GetProperty("outlook").ValueKind);
+        Assert.Equal(JsonValueKind.String, vc.GetProperty("interpretation").ValueKind);
+
+        // ── regime — net_gex lives HERE ──
+        var reg = r.GetProperty("regime");
+        Assert.Equal(JsonValueKind.String, reg.GetProperty("gamma").ValueKind);
+        Assert.Equal(JsonValueKind.String, reg.GetProperty("vrp_regime").ValueKind);
+        Assert.Equal(JsonValueKind.Number, reg.GetProperty("net_gex").ValueKind);
+        Assert.Equal(JsonValueKind.Number, reg.GetProperty("gamma_flip").ValueKind);
+
+        // ── strategy_scores ──
+        var ss = r.GetProperty("strategy_scores");
+        foreach (var k in new[] { "short_put_spread", "short_strangle", "iron_condor", "calendar_spread" })
+            Assert.Equal(JsonValueKind.Number, ss.GetProperty(k).ValueKind);
+
+        // ── macro (live includes fed_funds) ──
+        var m = r.GetProperty("macro");
+        foreach (var k in new[] { "vix", "vix_3m", "vix_term_slope", "dgs10" })
+            Assert.Equal(JsonValueKind.Number, m.GetProperty(k).ValueKind);
+        Assert.True(m.TryGetProperty("hy_spread", out _));     // may be null on live
+        Assert.Equal(JsonValueKind.Number, m.GetProperty("fed_funds").ValueKind);
+    }
+
     // Issue #1 — Nested response structures. Customer accessed
     // result["z_score"] directly and got null. Field lives at result["vrp"]["z_score"].
 
