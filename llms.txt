@@ -1,0 +1,102 @@
+# FlashAlpha .NET SDK
+
+> Official .NET / C# client for the [FlashAlpha](https://flashalpha.com) options
+> analytics API — gamma exposure (GEX), delta exposure (DEX), vanna (VEX),
+> charm (CHEX), 0DTE analytics, max pain, variance risk premium (VRP), implied
+> volatility surface, Black-Scholes greeks, Kelly sizing, options screener.
+
+FlashAlpha is a real-time options analytics REST API for SPX, SPY, QQQ, AAPL
+and all major US equities and indices. The .NET SDK is a thin, dependency-free
+wrapper around the API plus typed response POCOs for the most-used endpoints.
+
+- Package: `dotnet add package FlashAlpha`
+- Target: .NET 8.0+
+- Auth: `X-Api-Key` header — get a key at <https://flashalpha.com>
+- Playground: <https://lab.flashalpha.com/swagger>
+- API base URL: `https://lab.flashalpha.com`
+
+## What this SDK provides
+
+- `FlashAlphaClient` — typed, async, `IDisposable` HTTP wrapper. Returns
+  `Task<JsonElement>` for every endpoint plus typed `*Response` POCOs for the
+  load-bearing endpoints below.
+- Strongly-typed exceptions: `AuthenticationException`, `TierRestrictedException`,
+  `NotFoundException`, `RateLimitException`, `ServerException`, base
+  `FlashAlphaException`.
+- `ScreenerRequest` / `ScreenerGroup` / `ScreenerLeaf` / `ScreenerSort` —
+  full-featured screener DSL with boolean filter trees, sort, select, limit.
+
+## Sister package — historical replay
+
+`FlashAlpha.Historical` (separate NuGet) is the point-in-time variant. Same
+endpoint shapes, same POCO field names — just pass an `at=` timestamp to
+replay any minute back to 2018-04-16.
+
+## Endpoints (selected highlights)
+
+| Endpoint | SDK method | Plan |
+|---|---|---|
+| `GET /v1/stock/{symbol}/summary` | `StockSummaryAsync` | Free |
+| `GET /v1/exposure/gex/{symbol}` | `GexAsync` | Free |
+| `GET /v1/exposure/dex/{symbol}` | `DexAsync` | Free |
+| `GET /v1/exposure/vex/{symbol}` | `VexAsync` | Free |
+| `GET /v1/exposure/chex/{symbol}` | `ChexAsync` | Free |
+| `GET /v1/exposure/levels/{symbol}` | `ExposureLevelsAsync` | Free |
+| `GET /v1/exposure/summary/{symbol}` | `ExposureSummaryAsync` | Growth+ |
+| `GET /v1/exposure/narrative/{symbol}` | `NarrativeAsync` | Growth+ |
+| `GET /v1/exposure/zero-dte/{symbol}` | `ZeroDteAsync` | Growth+ |
+| `GET /v1/maxpain/{symbol}` | `MaxPainAsync` | Growth+ |
+| `GET /v1/vrp/{symbol}` | `VrpAsync` | Alpha+ |
+| `GET /v1/pricing/greeks` | `GreeksAsync` | Free |
+| `GET /v1/pricing/iv` | `IvAsync` | Free |
+| `GET /v1/pricing/kelly` | `KellyAsync` | Growth+ |
+| `POST /v1/screener/run` | `ScreenerAsync` | Growth+ |
+
+Full list: see `README.md` and the swagger playground.
+
+## Typed response models
+
+The headline analytics endpoints have typed POCOs (`StockSummaryResponse`,
+`ExposureSummaryResponse`, `ExposureLevelsResponse`, `NarrativeResponse`,
+`MaxPainResponse`, `VrpResponse`, `ZeroDteResponse`, `PricingGreeksResponse`,
+`ScreenerResponse`). All use `System.Text.Json.Serialization.JsonPropertyName`
+and nullable reference types, so a `null` from the wire surfaces as a `null`
+property.
+
+## Tier breakdown
+
+- **Free** — quotes, surface, GEX/DEX/VEX/CHEX, levels, pricing greeks/IV,
+  stock summary, tickers, options metadata, account, health.
+- **Growth+** — narrative, exposure summary, max pain, 0DTE, screener,
+  Kelly, volatility, option quotes, exposure history, historical
+  stock/option quotes.
+- **Alpha+** — VRP and harvest scores, advanced volatility (SVI, variance
+  surface, arbitrage detection), Historical API access.
+
+Sign up: <https://flashalpha.com>
+
+## Quick start
+
+```csharp
+using FlashAlpha;
+
+using var client = new FlashAlphaClient("YOUR_API_KEY");
+
+// Comprehensive snapshot — price, vol, dealer exposure, macro
+var summary = await client.StockSummaryAsync("SPY");
+
+// Typed exposure summary
+var raw = await client.ExposureSummaryAsync("SPY");
+var typed = System.Text.Json.JsonSerializer.Deserialize<ExposureSummaryResponse>(raw.GetRawText());
+
+// Black-Scholes greeks (no symbol needed)
+var greeks = await client.GreeksAsync(spot: 580, strike: 580, dte: 30, sigma: 0.18, type: "call");
+```
+
+## Links
+
+- <https://flashalpha.com> — sign up, docs, pricing
+- <https://lab.flashalpha.com/swagger> — interactive API playground
+- <https://github.com/FlashAlpha-lab/flashalpha-dotnet> — this repository
+- <https://www.nuget.org/packages/FlashAlpha> — NuGet package
+- <https://github.com/FlashAlpha-lab/flashalpha-historical-dotnet> — historical replay SDK
