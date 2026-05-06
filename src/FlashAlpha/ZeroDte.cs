@@ -45,11 +45,11 @@ public sealed class ZeroDteResponse
     [JsonPropertyName("market_open")]
     public bool? MarketOpen { get; set; }
 
-    /// <summary>Hours remaining until 4pm ET cash close. Drives <see cref="ZeroDteDecay.ThetaPerHourRemaining"/> and the time-component of pin scoring. <c>null</c> when market is closed.</summary>
+    /// <summary>Hours remaining until 4pm ET cash close. Drives <see cref="ZeroDteDecay.ThetaPerHourRemaining"/> and the time-component of pin scoring. <c>0</c> when market is closed (the field is non-nullable on the wire — <see cref="ZeroDteDecay.ThetaPerHourRemaining"/> is what becomes <c>null</c> in that case).</summary>
     [JsonPropertyName("time_to_close_hours")]
     public double? TimeToCloseHours { get; set; }
 
-    /// <summary>Fraction of the trading day still remaining (0.0 at the bell, 1.0 at 9:30 ET). Used to scale full-day metrics into intraday remainders.</summary>
+    /// <summary>Percent of the regular trading day <b>elapsed</b> (0 = at the open, 100 = at the close). Range 0–100. Useful for time-weighting intraday metrics.</summary>
     [JsonPropertyName("time_to_close_pct")]
     public double? TimeToClosePct { get; set; }
 
