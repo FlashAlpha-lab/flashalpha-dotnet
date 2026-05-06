@@ -230,7 +230,7 @@ public sealed class StockSummaryOptionsFlow
 /// walls, max pain, hedging estimates, 0DTE breakdown, and top strikes.
 ///
 /// <para><see cref="Regime"/> is one of <c>"positive_gamma"</c>,
-/// <c>"negative_gamma"</c>, or <c>"undetermined"</c> — derived from spot
+/// <c>"negative_gamma"</c>, or <c>"unknown"</c> — derived from spot
 /// vs <see cref="GammaFlip"/>. In positive gamma, dealers buy dips and sell
 /// rips (vol-suppressing). In negative gamma, dealers chase the move
 /// (vol-amplifying).</para>
@@ -277,7 +277,7 @@ public sealed class StockSummaryExposure
     public double? HighestOiStrike { get; set; }
 
     /// <summary>
-    /// <c>"positive_gamma"</c> | <c>"negative_gamma"</c> | <c>"undetermined"</c>.
+    /// <c>"positive_gamma"</c> | <c>"negative_gamma"</c> | <c>"unknown"</c>.
     /// Derived from spot vs <see cref="GammaFlip"/>.
     /// </summary>
     [JsonPropertyName("regime")]
