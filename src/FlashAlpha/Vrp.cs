@@ -248,7 +248,7 @@ public sealed class VrpVannaConditioned
 /// </summary>
 public sealed class VrpRegime
 {
-    /// <summary><c>"positive_gamma"</c> | <c>"negative_gamma"</c> | <c>"neutral"</c> | <c>"undetermined"</c>.</summary>
+    /// <summary><c>"positive_gamma"</c> | <c>"negative_gamma"</c> | <c>"unknown"</c>.</summary>
     [JsonPropertyName("gamma")]
     public string? Gamma { get; set; }
 

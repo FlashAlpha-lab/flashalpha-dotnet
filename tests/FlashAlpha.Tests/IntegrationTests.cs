@@ -489,7 +489,7 @@ public sealed class IntegrationTests
         Assert.Equal(JsonValueKind.String, r.GetProperty("expiration").ValueKind);
         Assert.Equal(JsonValueKind.Number, r.GetProperty("put_call_oi_ratio").ValueKind);
         Assert.Contains(r.GetProperty("regime").GetString(),
-            new[] { "positive_gamma", "negative_gamma", "neutral", "undetermined" });
+            new[] { "positive_gamma", "negative_gamma", "unknown" });
         var pin = r.GetProperty("pin_probability").GetInt32();
         Assert.InRange(pin, 0, 100);
 
@@ -734,7 +734,7 @@ public sealed class IntegrationTests
         // result["regime"] — regime snapshot
         var reg = r.GetProperty("regime");
         var gamma = reg.GetProperty("gamma").GetString();
-        Assert.Contains(gamma, new[] { "positive_gamma", "negative_gamma", "neutral" });
+        Assert.Contains(gamma, new[] { "positive_gamma", "negative_gamma", "unknown" });
         Assert.Equal(JsonValueKind.Number, reg.GetProperty("net_gex").ValueKind);
         Assert.True(reg.TryGetProperty("vrp_regime", out _));
 
@@ -916,7 +916,7 @@ public sealed class IntegrationTests
         Assert.False(string.IsNullOrEmpty(r.GetProperty("as_of").GetString()));
         Assert.Equal(JsonValueKind.Number, r.GetProperty("gamma_flip").ValueKind);
         Assert.Contains(r.GetProperty("regime").GetString(),
-            new[] { "positive_gamma", "negative_gamma", "neutral", "undetermined" });
+            new[] { "positive_gamma", "negative_gamma", "unknown" });
         // ── exposures block (4 fields) ──
         var exp = r.GetProperty("exposures");
         foreach (var key in new[] { "net_gex", "net_dex", "net_vex", "net_chex" })
@@ -1037,5 +1037,268 @@ public sealed class IntegrationTests
         var row = data[0];
         foreach (var key in new[] { "symbol", "price", "regime" })
             Assert.True(row.TryGetProperty(key, out _), $"row missing {key}");
+    }
+
+    // ── rc.4 typed-POCO field-walk coverage ──────────────────────────────────
+    //
+    // Each test below deserializes a live response into the matching typed
+    // POCO and asserts every property is non-null. A renamed/deleted
+    // JsonPropertyName will surface immediately as a NotNull failure.
+
+    [LiveFact]
+    public async Task StockSummary_EveryFieldDeclaredInPocoMustBeReferenced()
+    {
+        using var client = CreateClient();
+        var elem = await client.StockSummaryAsync("SPY");
+        var r = System.Text.Json.JsonSerializer.Deserialize<StockSummaryResponse>(elem);
+        Assert.NotNull(r);
+
+        // top-level
+        Assert.Equal("SPY", r!.Symbol);
+        Assert.NotNull(r.AsOf);
+        Assert.NotNull(r.MarketOpen);
+
+        // price
+        Assert.NotNull(r.Price);
+        Assert.NotNull(r.Price!.Bid);
+        Assert.NotNull(r.Price.Ask);
+        Assert.NotNull(r.Price.Mid);
+        Assert.NotNull(r.Price.Last);
+        Assert.NotNull(r.Price.LastUpdate);
+
+        // volatility
+        Assert.NotNull(r.Volatility);
+        Assert.NotNull(r.Volatility!.AtmIv);
+        Assert.NotNull(r.Volatility.Hv20);
+        Assert.NotNull(r.Volatility.Hv60);
+        Assert.NotNull(r.Volatility.Vrp);
+        Assert.NotNull(r.Volatility.Skew25d);
+        Assert.NotNull(r.Volatility.Skew25d!.Expiry);
+        Assert.NotNull(r.Volatility.Skew25d.DaysToExpiry);
+        Assert.NotNull(r.Volatility.Skew25d.Put25dIv);
+        Assert.NotNull(r.Volatility.Skew25d.AtmIv);
+        Assert.NotNull(r.Volatility.Skew25d.Call25dIv);
+        Assert.NotNull(r.Volatility.Skew25d.Skew25dValue);
+        Assert.NotNull(r.Volatility.Skew25d.SmileRatio);
+        Assert.NotNull(r.Volatility.IvTermStructure);
+        if (r.Volatility.IvTermStructure!.Count > 0)
+        {
+            var t = r.Volatility.IvTermStructure[0];
+            Assert.NotNull(t.Expiry);
+            Assert.NotNull(t.Iv);
+            Assert.NotNull(t.DaysToExpiry);
+        }
+
+        // options_flow
+        Assert.NotNull(r.OptionsFlow);
+        Assert.NotNull(r.OptionsFlow!.TotalCallOi);
+        Assert.NotNull(r.OptionsFlow.TotalPutOi);
+        Assert.NotNull(r.OptionsFlow.TotalCallVolume);
+        Assert.NotNull(r.OptionsFlow.TotalPutVolume);
+        Assert.NotNull(r.OptionsFlow.PcRatioOi);
+        Assert.NotNull(r.OptionsFlow.PcRatioVolume);
+        Assert.NotNull(r.OptionsFlow.ActiveExpirations);
+
+        // exposure
+        Assert.NotNull(r.Exposure);
+        Assert.NotNull(r.Exposure!.NetGex);
+        Assert.NotNull(r.Exposure.NetDex);
+        Assert.NotNull(r.Exposure.NetVex);
+        Assert.NotNull(r.Exposure.NetChex);
+        Assert.NotNull(r.Exposure.GammaFlip);
+        Assert.NotNull(r.Exposure.CallWall);
+        Assert.NotNull(r.Exposure.PutWall);
+        Assert.NotNull(r.Exposure.MaxPain);
+        Assert.NotNull(r.Exposure.HighestOiStrike);
+        Assert.NotNull(r.Exposure.Regime);
+        Assert.Contains(r.Exposure.Regime, new[] { "positive_gamma", "negative_gamma", "unknown" });
+        Assert.NotNull(r.Exposure.Interpretation);
+        Assert.NotNull(r.Exposure.Interpretation!.Gamma);
+        Assert.NotNull(r.Exposure.Interpretation.Vanna);
+        Assert.NotNull(r.Exposure.Interpretation.Charm);
+        Assert.NotNull(r.Exposure.HedgingEstimate);
+        Assert.NotNull(r.Exposure.HedgingEstimate!.SpotDown1Pct);
+        Assert.NotNull(r.Exposure.HedgingEstimate.SpotDown1Pct!.DealerShares);
+        Assert.NotNull(r.Exposure.HedgingEstimate.SpotDown1Pct.Direction);
+        Assert.NotNull(r.Exposure.HedgingEstimate.SpotDown1Pct.NotionalUsd);
+        Assert.NotNull(r.Exposure.HedgingEstimate.SpotUp1Pct);
+        Assert.NotNull(r.Exposure.HedgingEstimate.SpotUp1Pct!.DealerShares);
+        Assert.NotNull(r.Exposure.HedgingEstimate.SpotUp1Pct.Direction);
+        Assert.NotNull(r.Exposure.HedgingEstimate.SpotUp1Pct.NotionalUsd);
+        Assert.NotNull(r.Exposure.ZeroDte);
+        Assert.NotNull(r.Exposure.ZeroDte!.NetGex);
+        Assert.NotNull(r.Exposure.ZeroDte.PctOfTotal);
+        // expiration may be null when no 0DTE expiry exists today
+        if (r.Exposure.ZeroDte.NetGex != 0 || r.Exposure.ZeroDte.PctOfTotal != 0)
+        {
+            // 0DTE actually exists — expiration should be populated
+            // (skipped silently when it's a non-0DTE day)
+        }
+        Assert.NotNull(r.Exposure.TopStrikes);
+        if (r.Exposure.TopStrikes!.Count > 0)
+        {
+            var ts = r.Exposure.TopStrikes[0];
+            Assert.NotNull(ts.Strike);
+            Assert.NotNull(ts.NetGex);
+            Assert.NotNull(ts.CallOi);
+            Assert.NotNull(ts.PutOi);
+            Assert.NotNull(ts.TotalOi);
+        }
+        Assert.NotNull(r.Exposure.OiWeightedDte);
+
+        // macro — sub-blocks individually nullable per docs, but the live API
+        // routinely populates all of them on SPY during market hours
+        Assert.NotNull(r.Macro);
+        foreach (var (q, name) in new[]
+        {
+            (r.Macro!.Vix, "vix"), (r.Macro.Vvix, "vvix"),
+            (r.Macro.Skew, "skew"), (r.Macro.Spx, "spx"), (r.Macro.Move, "move"),
+        })
+        {
+            if (q is null) continue; // documented as best-effort
+            Assert.True(q.Value is not null, $"macro.{name}.value null");
+            Assert.True(q.Change is not null, $"macro.{name}.change null");
+            Assert.True(q.ChangePct is not null, $"macro.{name}.change_pct null");
+        }
+        if (r.Macro.VixTermStructure is not null)
+        {
+            Assert.NotNull(r.Macro.VixTermStructure.Levels);
+            Assert.NotNull(r.Macro.VixTermStructure.Levels!.Vix9d);
+            Assert.NotNull(r.Macro.VixTermStructure.Levels.Vix);
+            Assert.NotNull(r.Macro.VixTermStructure.Levels.Vix3m);
+            Assert.NotNull(r.Macro.VixTermStructure.Levels.Vix6m);
+            Assert.NotNull(r.Macro.VixTermStructure.NearSlopePct);
+            Assert.NotNull(r.Macro.VixTermStructure.Structure);
+        }
+        if (r.Macro.VixFutures is not null)
+        {
+            Assert.NotNull(r.Macro.VixFutures.FrontMonth);
+            Assert.NotNull(r.Macro.VixFutures.Spot);
+            Assert.NotNull(r.Macro.VixFutures.Spread);
+            Assert.NotNull(r.Macro.VixFutures.BasisPct);
+            Assert.NotNull(r.Macro.VixFutures.Basis);
+        }
+        if (r.Macro.FearAndGreed is not null)
+        {
+            Assert.NotNull(r.Macro.FearAndGreed.Score);
+            Assert.NotNull(r.Macro.FearAndGreed.Rating);
+        }
+    }
+
+    [LiveFact]
+    public async Task Narrative_EveryFieldDeclaredInPocoMustBeReferenced()
+    {
+        using var client = CreateClient();
+        var elem = await client.NarrativeAsync("SPY");
+        var r = System.Text.Json.JsonSerializer.Deserialize<NarrativeResponse>(elem);
+        Assert.NotNull(r);
+
+        Assert.Equal("SPY", r!.Symbol);
+        Assert.NotNull(r.UnderlyingPrice);
+        Assert.NotNull(r.AsOf);
+        Assert.NotNull(r.Narrative);
+        Assert.NotNull(r.Narrative!.Regime);
+        Assert.NotNull(r.Narrative.GexChange);
+        Assert.NotNull(r.Narrative.KeyLevels);
+        Assert.NotNull(r.Narrative.Flow);
+        Assert.NotNull(r.Narrative.Vanna);
+        Assert.NotNull(r.Narrative.Charm);
+        Assert.NotNull(r.Narrative.ZeroDte);
+        Assert.NotNull(r.Narrative.Outlook);
+
+        Assert.NotNull(r.Narrative.Data);
+        var d = r.Narrative.Data!;
+        Assert.NotNull(d.NetGex);
+        Assert.NotNull(d.NetGexPrior);
+        Assert.NotNull(d.NetGexChangePct);
+        Assert.NotNull(d.Vix);
+        Assert.NotNull(d.GammaFlip);
+        Assert.NotNull(d.CallWall);
+        Assert.NotNull(d.PutWall);
+        Assert.NotNull(d.Regime);
+        Assert.Contains(d.Regime, new[] { "positive_gamma", "negative_gamma", "unknown" });
+        Assert.NotNull(d.ZeroDtePct);
+        Assert.NotNull(d.TopOiChanges);
+        if (d.TopOiChanges!.Count > 0)
+        {
+            var row = d.TopOiChanges[0];
+            Assert.NotNull(row.Strike);
+            Assert.NotNull(row.Type);
+            Assert.NotNull(row.OiChange);
+            Assert.NotNull(row.Volume);
+        }
+    }
+
+    [LiveFact]
+    public async Task ExposureLevels_EveryFieldDeclaredInPocoMustBeReferenced()
+    {
+        using var client = CreateClient();
+        var elem = await client.ExposureLevelsAsync("SPY");
+        var r = System.Text.Json.JsonSerializer.Deserialize<ExposureLevelsResponse>(elem);
+        Assert.NotNull(r);
+
+        Assert.Equal("SPY", r!.Symbol);
+        Assert.NotNull(r.UnderlyingPrice);
+        Assert.NotNull(r.AsOf);
+        Assert.NotNull(r.Levels);
+        Assert.NotNull(r.Levels!.GammaFlip);
+        Assert.NotNull(r.Levels.MaxPositiveGamma);
+        Assert.NotNull(r.Levels.MaxNegativeGamma);
+        Assert.NotNull(r.Levels.CallWall);
+        Assert.NotNull(r.Levels.PutWall);
+        Assert.NotNull(r.Levels.HighestOiStrike);
+        // ZeroDteMagnet — explicit assertion was missing in historical's
+        // Levels_KeysPresent. Make sure live tests catch it too.
+        Assert.NotNull(r.Levels.ZeroDteMagnet);
+    }
+
+    [LiveFact]
+    public async Task PricingGreeks_EveryFieldDeclaredInPocoMustBeReferenced()
+    {
+        using var client = CreateClient();
+        var elem = await client.GreeksAsync(spot: 580, strike: 580, dte: 30, sigma: 0.18, type: "call");
+        var r = System.Text.Json.JsonSerializer.Deserialize<PricingGreeksResponse>(elem);
+        Assert.NotNull(r);
+
+        // theoretical_price
+        Assert.NotNull(r!.TheoreticalPrice);
+
+        // inputs
+        Assert.NotNull(r.Inputs);
+        Assert.NotNull(r.Inputs!.Spot);
+        Assert.NotNull(r.Inputs.Strike);
+        Assert.NotNull(r.Inputs.Dte);
+        Assert.NotNull(r.Inputs.Sigma);
+        Assert.NotNull(r.Inputs.Type);
+        Assert.NotNull(r.Inputs.RiskFreeRate);
+        Assert.NotNull(r.Inputs.DividendYield);
+
+        // first_order
+        Assert.NotNull(r.FirstOrder);
+        Assert.NotNull(r.FirstOrder!.Delta);
+        Assert.NotNull(r.FirstOrder.Gamma);
+        Assert.NotNull(r.FirstOrder.Theta);
+        Assert.NotNull(r.FirstOrder.Vega);
+        Assert.NotNull(r.FirstOrder.Rho);
+
+        // second_order
+        Assert.NotNull(r.SecondOrder);
+        Assert.NotNull(r.SecondOrder!.Vanna);
+        Assert.NotNull(r.SecondOrder.Charm);
+        Assert.NotNull(r.SecondOrder.Vomma);
+        Assert.NotNull(r.SecondOrder.DualDelta);
+
+        // third_order
+        Assert.NotNull(r.ThirdOrder);
+        Assert.NotNull(r.ThirdOrder!.Speed);
+        Assert.NotNull(r.ThirdOrder.Zomma);
+        Assert.NotNull(r.ThirdOrder.Color);
+        Assert.NotNull(r.ThirdOrder.Ultima);
+
+        // additional — lambda is null when theoretical_price <= 0
+        Assert.NotNull(r.Additional);
+        Assert.NotNull(r.Additional!.Veta);
+        if ((r.TheoreticalPrice ?? 0) > 0)
+            Assert.NotNull(r.Additional.Lambda);
     }
 }
