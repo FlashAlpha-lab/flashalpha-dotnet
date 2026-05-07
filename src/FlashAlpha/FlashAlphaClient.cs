@@ -537,6 +537,27 @@ public sealed class FlashAlphaClient : IDisposable
         return GetAsync("/v1/pricing/iv", p, ct);
     }
 
+    /// <summary>
+    /// Strongly-typed variant of <see cref="IvAsync(double, double, double, double, string, double?, double?, CancellationToken)"/>.
+    /// Returns a <see cref="PricingIvResponse"/> POCO with the inverted IV (decimal +
+    /// percent) and an echo of the request inputs. The original
+    /// <see cref="IvAsync(double, double, double, double, string, double?, double?, CancellationToken)"/>
+    /// remains unchanged.
+    /// </summary>
+    public async Task<PricingIvResponse?> IvTypedAsync(
+        double spot,
+        double strike,
+        double dte,
+        double price,
+        string type = "call",
+        double? r = null,
+        double? q = null,
+        CancellationToken ct = default)
+    {
+        var element = await IvAsync(spot, strike, dte, price, type, r, q, ct).ConfigureAwait(false);
+        return element.Deserialize<PricingIvResponse>(PostSerializerOptions);
+    }
+
     /// <summary>Kelly criterion optimal position sizing. Requires Growth+.</summary>
     public Task<JsonElement> KellyAsync(
         double spot,
@@ -563,6 +584,29 @@ public sealed class FlashAlphaClient : IDisposable
         if (r.HasValue) p["r"] = r.Value.ToString(System.Globalization.CultureInfo.InvariantCulture);
         if (q.HasValue) p["q"] = q.Value.ToString(System.Globalization.CultureInfo.InvariantCulture);
         return GetAsync("/v1/pricing/kelly", p, ct);
+    }
+
+    /// <summary>
+    /// Strongly-typed variant of <see cref="KellyAsync(double, double, double, double, double, double, string, double?, double?, CancellationToken)"/>.
+    /// Returns a <see cref="PricingKellyResponse"/> POCO with sizing fractions, expected
+    /// payoff/probability analytics, and a plain-English recommendation. The original
+    /// <see cref="KellyAsync(double, double, double, double, double, double, string, double?, double?, CancellationToken)"/>
+    /// remains unchanged.
+    /// </summary>
+    public async Task<PricingKellyResponse?> KellyTypedAsync(
+        double spot,
+        double strike,
+        double dte,
+        double sigma,
+        double premium,
+        double mu,
+        string type = "call",
+        double? r = null,
+        double? q = null,
+        CancellationToken ct = default)
+    {
+        var element = await KellyAsync(spot, strike, dte, sigma, premium, mu, type, r, q, ct).ConfigureAwait(false);
+        return element.Deserialize<PricingKellyResponse>(PostSerializerOptions);
     }
 
     // ── Volatility Analytics ──────────────────────────────────────────────────
@@ -654,13 +698,47 @@ public sealed class FlashAlphaClient : IDisposable
     public Task<JsonElement> TickersAsync(CancellationToken ct = default)
         => GetAsync("/v1/tickers", null, ct);
 
+    /// <summary>
+    /// Strongly-typed variant of <see cref="TickersAsync(CancellationToken)"/>.
+    /// Returns a <see cref="TickersResponse"/> POCO. The original
+    /// <see cref="TickersAsync(CancellationToken)"/> remains unchanged.
+    /// </summary>
+    public async Task<TickersResponse?> TickersTypedAsync(CancellationToken ct = default)
+    {
+        var element = await TickersAsync(ct).ConfigureAwait(false);
+        return element.Deserialize<TickersResponse>(PostSerializerOptions);
+    }
+
     /// <summary>Option chain metadata (expirations and strikes) for a ticker.</summary>
     public Task<JsonElement> OptionsAsync(string ticker, CancellationToken ct = default)
         => GetAsync($"/v1/options/{Uri.EscapeDataString(ticker)}", null, ct);
 
+    /// <summary>
+    /// Strongly-typed variant of <see cref="OptionsAsync(string, CancellationToken)"/>.
+    /// Returns an <see cref="OptionsMetaResponse"/> POCO with the listed expirations
+    /// and per-expiry strike lists. The original
+    /// <see cref="OptionsAsync(string, CancellationToken)"/> remains unchanged.
+    /// </summary>
+    public async Task<OptionsMetaResponse?> OptionsTypedAsync(string ticker, CancellationToken ct = default)
+    {
+        var element = await OptionsAsync(ticker, ct).ConfigureAwait(false);
+        return element.Deserialize<OptionsMetaResponse>(PostSerializerOptions);
+    }
+
     /// <summary>Currently queried symbols with live data.</summary>
     public Task<JsonElement> SymbolsAsync(CancellationToken ct = default)
         => GetAsync("/v1/symbols", null, ct);
+
+    /// <summary>
+    /// Strongly-typed variant of <see cref="SymbolsAsync(CancellationToken)"/>.
+    /// Returns a <see cref="SymbolsResponse"/> POCO. The original
+    /// <see cref="SymbolsAsync(CancellationToken)"/> remains unchanged.
+    /// </summary>
+    public async Task<SymbolsResponse?> SymbolsTypedAsync(CancellationToken ct = default)
+    {
+        var element = await SymbolsAsync(ct).ConfigureAwait(false);
+        return element.Deserialize<SymbolsResponse>(PostSerializerOptions);
+    }
 
     // ── Account & System ──────────────────────────────────────────────────────
 
@@ -706,13 +784,56 @@ public sealed class FlashAlphaClient : IDisposable
     public Task<JsonElement> ScreenerAsync(object body, CancellationToken ct = default)
         => PostAsync("/v1/screener", body, ct);
 
+    /// <summary>
+    /// Strongly-typed variant of <see cref="ScreenerAsync(ScreenerRequest, CancellationToken)"/>.
+    /// Returns a <see cref="ScreenerResponse"/> POCO with strongly-typed
+    /// <see cref="ScreenerMeta"/> and a <see cref="System.Text.Json.JsonElement"/>[]
+    /// for <see cref="ScreenerResponse.Data"/> (row schema depends on <c>select</c>).
+    /// The original <see cref="ScreenerAsync(ScreenerRequest, CancellationToken)"/>
+    /// remains unchanged.
+    /// </summary>
+    public async Task<ScreenerResponse?> ScreenerTypedAsync(ScreenerRequest request, CancellationToken ct = default)
+    {
+        var element = await ScreenerAsync(request, ct).ConfigureAwait(false);
+        return element.Deserialize<ScreenerResponse>(PostSerializerOptions);
+    }
+
+    /// <inheritdoc cref="ScreenerTypedAsync(ScreenerRequest, CancellationToken)"/>
+    public async Task<ScreenerResponse?> ScreenerTypedAsync(object body, CancellationToken ct = default)
+    {
+        var element = await ScreenerAsync(body, ct).ConfigureAwait(false);
+        return element.Deserialize<ScreenerResponse>(PostSerializerOptions);
+    }
+
     /// <summary>Account info and quota usage.</summary>
     public Task<JsonElement> AccountAsync(CancellationToken ct = default)
         => GetAsync("/v1/account", null, ct);
 
+    /// <summary>
+    /// Strongly-typed variant of <see cref="AccountAsync(CancellationToken)"/>.
+    /// Returns an <see cref="AccountResponse"/> POCO. The original
+    /// <see cref="AccountAsync(CancellationToken)"/> remains unchanged.
+    /// </summary>
+    public async Task<AccountResponse?> AccountTypedAsync(CancellationToken ct = default)
+    {
+        var element = await AccountAsync(ct).ConfigureAwait(false);
+        return element.Deserialize<AccountResponse>(PostSerializerOptions);
+    }
+
     /// <summary>API health check (public, no authentication required).</summary>
     public Task<JsonElement> HealthAsync(CancellationToken ct = default)
         => GetAsync("/health", null, ct);
+
+    /// <summary>
+    /// Strongly-typed variant of <see cref="HealthAsync(CancellationToken)"/>.
+    /// Returns a <see cref="HealthResponse"/> POCO. The original
+    /// <see cref="HealthAsync(CancellationToken)"/> remains unchanged.
+    /// </summary>
+    public async Task<HealthResponse?> HealthTypedAsync(CancellationToken ct = default)
+    {
+        var element = await HealthAsync(ct).ConfigureAwait(false);
+        return element.Deserialize<HealthResponse>(PostSerializerOptions);
+    }
 
     // ── IDisposable ───────────────────────────────────────────────────────────
 
