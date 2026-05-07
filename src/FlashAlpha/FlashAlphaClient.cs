@@ -198,6 +198,18 @@ public sealed class FlashAlphaClient : IDisposable
     public Task<JsonElement> StockSummaryAsync(string symbol, CancellationToken ct = default)
         => GetAsync($"/v1/stock/{Uri.EscapeDataString(symbol)}/summary", null, ct);
 
+    /// <summary>
+    /// Strongly-typed variant of <see cref="StockSummaryAsync(string, CancellationToken)"/>.
+    /// Returns a <see cref="StockSummaryResponse"/> POCO with snake_case → PascalCase
+    /// field mappings. The original <see cref="StockSummaryAsync(string, CancellationToken)"/>
+    /// remains unchanged.
+    /// </summary>
+    public async Task<StockSummaryResponse?> StockSummaryTypedAsync(string symbol, CancellationToken ct = default)
+    {
+        var element = await StockSummaryAsync(symbol, ct).ConfigureAwait(false);
+        return element.Deserialize<StockSummaryResponse>(PostSerializerOptions);
+    }
+
     // ── Historical ────────────────────────────────────────────────────────────
 
     /// <summary>Historical stock quotes (minute-by-minute).</summary>
@@ -273,13 +285,46 @@ public sealed class FlashAlphaClient : IDisposable
     public Task<JsonElement> ExposureSummaryAsync(string symbol, CancellationToken ct = default)
         => GetAsync($"/v1/exposure/summary/{Uri.EscapeDataString(symbol)}", null, ct);
 
+    /// <summary>
+    /// Strongly-typed variant of <see cref="ExposureSummaryAsync(string, CancellationToken)"/>.
+    /// Returns an <see cref="ExposureSummaryResponse"/> POCO. The original
+    /// <see cref="ExposureSummaryAsync(string, CancellationToken)"/> remains unchanged.
+    /// </summary>
+    public async Task<ExposureSummaryResponse?> ExposureSummaryTypedAsync(string symbol, CancellationToken ct = default)
+    {
+        var element = await ExposureSummaryAsync(symbol, ct).ConfigureAwait(false);
+        return element.Deserialize<ExposureSummaryResponse>(PostSerializerOptions);
+    }
+
     /// <summary>Key support/resistance levels derived from options exposure.</summary>
     public Task<JsonElement> ExposureLevelsAsync(string symbol, CancellationToken ct = default)
         => GetAsync($"/v1/exposure/levels/{Uri.EscapeDataString(symbol)}", null, ct);
 
+    /// <summary>
+    /// Strongly-typed variant of <see cref="ExposureLevelsAsync(string, CancellationToken)"/>.
+    /// Returns an <see cref="ExposureLevelsResponse"/> POCO. The original
+    /// <see cref="ExposureLevelsAsync(string, CancellationToken)"/> remains unchanged.
+    /// </summary>
+    public async Task<ExposureLevelsResponse?> ExposureLevelsTypedAsync(string symbol, CancellationToken ct = default)
+    {
+        var element = await ExposureLevelsAsync(symbol, ct).ConfigureAwait(false);
+        return element.Deserialize<ExposureLevelsResponse>(PostSerializerOptions);
+    }
+
     /// <summary>Verbal narrative analysis of exposure. Requires Growth+.</summary>
     public Task<JsonElement> NarrativeAsync(string symbol, CancellationToken ct = default)
         => GetAsync($"/v1/exposure/narrative/{Uri.EscapeDataString(symbol)}", null, ct);
+
+    /// <summary>
+    /// Strongly-typed variant of <see cref="NarrativeAsync(string, CancellationToken)"/>.
+    /// Returns a <see cref="NarrativeResponse"/> POCO. The original
+    /// <see cref="NarrativeAsync(string, CancellationToken)"/> remains unchanged.
+    /// </summary>
+    public async Task<NarrativeResponse?> NarrativeTypedAsync(string symbol, CancellationToken ct = default)
+    {
+        var element = await NarrativeAsync(symbol, ct).ConfigureAwait(false);
+        return element.Deserialize<NarrativeResponse>(PostSerializerOptions);
+    }
 
     /// <summary>Real-time 0DTE analytics: regime, expected move, pin risk, hedging, decay. Requires Growth+.</summary>
     public Task<JsonElement> ZeroDteAsync(string symbol, double? strikeRange = null, CancellationToken ct = default)
@@ -334,6 +379,27 @@ public sealed class FlashAlphaClient : IDisposable
         if (r.HasValue) p["r"] = r.Value.ToString(System.Globalization.CultureInfo.InvariantCulture);
         if (q.HasValue) p["q"] = q.Value.ToString(System.Globalization.CultureInfo.InvariantCulture);
         return GetAsync("/v1/pricing/greeks", p, ct);
+    }
+
+    /// <summary>
+    /// Strongly-typed variant of <see cref="GreeksAsync(double, double, double, double, string, double?, double?, CancellationToken)"/>.
+    /// Returns a <see cref="PricingGreeksResponse"/> POCO with first-, second-, and third-order
+    /// greeks plus theoretical price. The original
+    /// <see cref="GreeksAsync(double, double, double, double, string, double?, double?, CancellationToken)"/>
+    /// remains unchanged.
+    /// </summary>
+    public async Task<PricingGreeksResponse?> GreeksTypedAsync(
+        double spot,
+        double strike,
+        double dte,
+        double sigma,
+        string type = "call",
+        double r = 0.045,
+        double q = 0.013,
+        CancellationToken ct = default)
+    {
+        var element = await GreeksAsync(spot, strike, dte, sigma, type, r, q, ct).ConfigureAwait(false);
+        return element.Deserialize<PricingGreeksResponse>(PostSerializerOptions);
     }
 
     /// <summary>Implied volatility from market price.</summary>
@@ -433,6 +499,18 @@ public sealed class FlashAlphaClient : IDisposable
     public Task<JsonElement> VrpAsync(string symbol, CancellationToken ct = default)
         => GetAsync($"/v1/vrp/{Uri.EscapeDataString(symbol)}", null, ct);
 
+    /// <summary>
+    /// Strongly-typed variant of <see cref="VrpAsync(string, CancellationToken)"/>.
+    /// Returns a <see cref="VrpResponse"/> POCO covering core VRP metrics, directional skew,
+    /// gamma-regime conditioning, regime snapshot, strategy scores, and term-VRP series.
+    /// The original <see cref="VrpAsync(string, CancellationToken)"/> remains unchanged.
+    /// </summary>
+    public async Task<VrpResponse?> VrpTypedAsync(string symbol, CancellationToken ct = default)
+    {
+        var element = await VrpAsync(symbol, ct).ConfigureAwait(false);
+        return element.Deserialize<VrpResponse>(PostSerializerOptions);
+    }
+
     // ── Reference Data ────────────────────────────────────────────────────────
 
     /// <summary>All available stock tickers.</summary>
@@ -458,6 +536,18 @@ public sealed class FlashAlphaClient : IDisposable
         var p = new Dictionary<string, string?>();
         if (expiration is not null) p["expiration"] = expiration;
         return GetAsync($"/v1/maxpain/{Uri.EscapeDataString(symbol)}", p.Count > 0 ? p : null, ct);
+    }
+
+    /// <summary>
+    /// Strongly-typed variant of <see cref="MaxPainAsync(string, string?, CancellationToken)"/>.
+    /// Returns a <see cref="MaxPainResponse"/> POCO with the pain curve, dealer alignment,
+    /// expected move, pin probability, and multi-expiry calendar.
+    /// The original <see cref="MaxPainAsync(string, string?, CancellationToken)"/> remains unchanged.
+    /// </summary>
+    public async Task<MaxPainResponse?> MaxPainTypedAsync(string symbol, string? expiration = null, CancellationToken ct = default)
+    {
+        var element = await MaxPainAsync(symbol, expiration, ct).ConfigureAwait(false);
+        return element.Deserialize<MaxPainResponse>(PostSerializerOptions);
     }
 
     // ── Screener ──────────────────────────────────────────────────────────────
