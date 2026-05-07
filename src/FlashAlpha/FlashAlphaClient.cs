@@ -175,6 +175,17 @@ public sealed class FlashAlphaClient : IDisposable
     public Task<JsonElement> StockQuoteAsync(string ticker, CancellationToken ct = default)
         => GetAsync($"/stockquote/{Uri.EscapeDataString(ticker)}", null, ct);
 
+    /// <summary>
+    /// Strongly-typed variant of <see cref="StockQuoteAsync(string, CancellationToken)"/>.
+    /// Returns a <see cref="StockQuoteResponse"/> POCO. The original
+    /// <see cref="StockQuoteAsync(string, CancellationToken)"/> remains unchanged.
+    /// </summary>
+    public async Task<StockQuoteResponse?> StockQuoteTypedAsync(string ticker, CancellationToken ct = default)
+    {
+        var element = await StockQuoteAsync(ticker, ct).ConfigureAwait(false);
+        return JsonSerializer.Deserialize<StockQuoteResponse>(element.GetRawText(), PostSerializerOptions);
+    }
+
     /// <summary>Option quotes with greeks. Requires Growth+.</summary>
     public Task<JsonElement> OptionQuoteAsync(
         string ticker,
@@ -190,9 +201,58 @@ public sealed class FlashAlphaClient : IDisposable
         return GetAsync($"/optionquote/{Uri.EscapeDataString(ticker)}", p.Count > 0 ? p : null, ct);
     }
 
+    /// <summary>
+    /// Strongly-typed variant of <see cref="OptionQuoteAsync(string, string?, double?, string?, CancellationToken)"/>
+    /// for the single-object response shape — i.e. when ALL three filters
+    /// (<paramref name="expiry"/> + <paramref name="strike"/> + <paramref name="type"/>) are supplied.
+    /// Returns a single <see cref="OptionQuote"/> POCO. The original untyped
+    /// <see cref="OptionQuoteAsync(string, string?, double?, string?, CancellationToken)"/> remains unchanged.
+    /// </summary>
+    /// <remarks>
+    /// When any filter is omitted the API returns an array — use
+    /// <see cref="OptionQuotesTypedAsync(string, string?, double?, string?, CancellationToken)"/> instead.
+    /// </remarks>
+    public async Task<OptionQuote?> OptionQuoteTypedAsync(
+        string ticker,
+        string? expiry = null,
+        double? strike = null,
+        string? type = null,
+        CancellationToken ct = default)
+    {
+        var element = await OptionQuoteAsync(ticker, expiry, strike, type, ct).ConfigureAwait(false);
+        return JsonSerializer.Deserialize<OptionQuote>(element.GetRawText(), PostSerializerOptions);
+    }
+
+    /// <summary>
+    /// Strongly-typed variant of <see cref="OptionQuoteAsync(string, string?, double?, string?, CancellationToken)"/>
+    /// for the array response shape — i.e. when no filters or partial filters are supplied.
+    /// Returns a <see cref="List{T}"/> of <see cref="OptionQuote"/> POCOs.
+    /// </summary>
+    public async Task<List<OptionQuote>?> OptionQuotesTypedAsync(
+        string ticker,
+        string? expiry = null,
+        double? strike = null,
+        string? type = null,
+        CancellationToken ct = default)
+    {
+        var element = await OptionQuoteAsync(ticker, expiry, strike, type, ct).ConfigureAwait(false);
+        return JsonSerializer.Deserialize<List<OptionQuote>>(element.GetRawText(), PostSerializerOptions);
+    }
+
     /// <summary>Volatility surface grid (public, no auth required).</summary>
     public Task<JsonElement> SurfaceAsync(string symbol, CancellationToken ct = default)
         => GetAsync($"/v1/surface/{Uri.EscapeDataString(symbol)}", null, ct);
+
+    /// <summary>
+    /// Strongly-typed variant of <see cref="SurfaceAsync(string, CancellationToken)"/>.
+    /// Returns a <see cref="SurfaceResponse"/> POCO. Public — no auth required.
+    /// The original <see cref="SurfaceAsync(string, CancellationToken)"/> remains unchanged.
+    /// </summary>
+    public async Task<SurfaceResponse?> SurfaceTypedAsync(string symbol, CancellationToken ct = default)
+    {
+        var element = await SurfaceAsync(symbol, ct).ConfigureAwait(false);
+        return JsonSerializer.Deserialize<SurfaceResponse>(element.GetRawText(), PostSerializerOptions);
+    }
 
     /// <summary>Comprehensive stock summary (price, vol, exposure, macro).</summary>
     public Task<JsonElement> StockSummaryAsync(string symbol, CancellationToken ct = default)
@@ -257,12 +317,39 @@ public sealed class FlashAlphaClient : IDisposable
         return GetAsync($"/v1/exposure/gex/{Uri.EscapeDataString(symbol)}", p.Count > 0 ? p : null, ct);
     }
 
+    /// <summary>
+    /// Strongly-typed variant of <see cref="GexAsync(string, string?, int?, CancellationToken)"/>.
+    /// Returns a <see cref="GexResponse"/> POCO with per-strike GEX rows plus
+    /// gamma flip and net GEX label. The original
+    /// <see cref="GexAsync(string, string?, int?, CancellationToken)"/> remains unchanged.
+    /// </summary>
+    public async Task<GexResponse?> GexTypedAsync(
+        string symbol,
+        string? expiration = null,
+        int? minOi = null,
+        CancellationToken ct = default)
+    {
+        var element = await GexAsync(symbol, expiration, minOi, ct).ConfigureAwait(false);
+        return JsonSerializer.Deserialize<GexResponse>(element.GetRawText(), PostSerializerOptions);
+    }
+
     /// <summary>Delta exposure by strike.</summary>
     public Task<JsonElement> DexAsync(string symbol, string? expiration = null, CancellationToken ct = default)
     {
         var p = new Dictionary<string, string?>();
         if (expiration is not null) p["expiration"] = expiration;
         return GetAsync($"/v1/exposure/dex/{Uri.EscapeDataString(symbol)}", p.Count > 0 ? p : null, ct);
+    }
+
+    /// <summary>
+    /// Strongly-typed variant of <see cref="DexAsync(string, string?, CancellationToken)"/>.
+    /// Returns a <see cref="DexResponse"/> POCO with per-strike DEX rows plus net DEX.
+    /// The original <see cref="DexAsync(string, string?, CancellationToken)"/> remains unchanged.
+    /// </summary>
+    public async Task<DexResponse?> DexTypedAsync(string symbol, string? expiration = null, CancellationToken ct = default)
+    {
+        var element = await DexAsync(symbol, expiration, ct).ConfigureAwait(false);
+        return JsonSerializer.Deserialize<DexResponse>(element.GetRawText(), PostSerializerOptions);
     }
 
     /// <summary>Vanna exposure by strike.</summary>
@@ -273,12 +360,36 @@ public sealed class FlashAlphaClient : IDisposable
         return GetAsync($"/v1/exposure/vex/{Uri.EscapeDataString(symbol)}", p.Count > 0 ? p : null, ct);
     }
 
+    /// <summary>
+    /// Strongly-typed variant of <see cref="VexAsync(string, string?, CancellationToken)"/>.
+    /// Returns a <see cref="VexResponse"/> POCO with per-strike VEX rows plus net VEX
+    /// and a textual interpretation. The original
+    /// <see cref="VexAsync(string, string?, CancellationToken)"/> remains unchanged.
+    /// </summary>
+    public async Task<VexResponse?> VexTypedAsync(string symbol, string? expiration = null, CancellationToken ct = default)
+    {
+        var element = await VexAsync(symbol, expiration, ct).ConfigureAwait(false);
+        return JsonSerializer.Deserialize<VexResponse>(element.GetRawText(), PostSerializerOptions);
+    }
+
     /// <summary>Charm exposure by strike.</summary>
     public Task<JsonElement> ChexAsync(string symbol, string? expiration = null, CancellationToken ct = default)
     {
         var p = new Dictionary<string, string?>();
         if (expiration is not null) p["expiration"] = expiration;
         return GetAsync($"/v1/exposure/chex/{Uri.EscapeDataString(symbol)}", p.Count > 0 ? p : null, ct);
+    }
+
+    /// <summary>
+    /// Strongly-typed variant of <see cref="ChexAsync(string, string?, CancellationToken)"/>.
+    /// Returns a <see cref="ChexResponse"/> POCO with per-strike CHEX rows plus net CHEX
+    /// and a textual interpretation. The original
+    /// <see cref="ChexAsync(string, string?, CancellationToken)"/> remains unchanged.
+    /// </summary>
+    public async Task<ChexResponse?> ChexTypedAsync(string symbol, string? expiration = null, CancellationToken ct = default)
+    {
+        var element = await ChexAsync(symbol, expiration, ct).ConfigureAwait(false);
+        return JsonSerializer.Deserialize<ChexResponse>(element.GetRawText(), PostSerializerOptions);
     }
 
     /// <summary>Full exposure summary (GEX/DEX/VEX/CHEX + hedging). Requires Growth+.</summary>
@@ -461,11 +572,37 @@ public sealed class FlashAlphaClient : IDisposable
         => GetAsync($"/v1/volatility/{Uri.EscapeDataString(symbol)}", null, ct);
 
     /// <summary>
+    /// Strongly-typed variant of <see cref="VolatilityAsync(string, CancellationToken)"/>.
+    /// Returns a <see cref="VolatilityResponse"/> POCO with realized-vol ladder, IV-RV spreads,
+    /// skew profiles, term structure, GEX/theta-by-DTE, put/call profile, OI concentration,
+    /// hedging scenarios, and liquidity. The original
+    /// <see cref="VolatilityAsync(string, CancellationToken)"/> remains unchanged.
+    /// </summary>
+    public async Task<VolatilityResponse?> VolatilityTypedAsync(string symbol, CancellationToken ct = default)
+    {
+        var element = await VolatilityAsync(symbol, ct).ConfigureAwait(false);
+        return JsonSerializer.Deserialize<VolatilityResponse>(element.GetRawText(), PostSerializerOptions);
+    }
+
+    /// <summary>
     /// Advanced volatility analytics: SVI parameters, variance surface, arbitrage detection,
     /// greek surfaces, and variance swap pricing. Requires Alpha+.
     /// </summary>
     public Task<JsonElement> AdvVolatilityAsync(string symbol, CancellationToken ct = default)
         => GetAsync($"/v1/adv_volatility/{Uri.EscapeDataString(symbol)}", null, ct);
+
+    /// <summary>
+    /// Strongly-typed variant of <see cref="AdvVolatilityAsync(string, CancellationToken)"/>.
+    /// Returns an <see cref="AdvVolatilityResponse"/> POCO covering SVI parameter sets,
+    /// forward prices, total variance surface, arbitrage flags, variance swap fair values,
+    /// and second-/third-order greek surfaces. The original
+    /// <see cref="AdvVolatilityAsync(string, CancellationToken)"/> remains unchanged.
+    /// </summary>
+    public async Task<AdvVolatilityResponse?> AdvVolatilityTypedAsync(string symbol, CancellationToken ct = default)
+    {
+        var element = await AdvVolatilityAsync(symbol, ct).ConfigureAwait(false);
+        return JsonSerializer.Deserialize<AdvVolatilityResponse>(element.GetRawText(), PostSerializerOptions);
+    }
 
     // ── VRP (Variance Risk Premium) ───────────────────────────────────────────
 
