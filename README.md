@@ -100,7 +100,35 @@ All methods return `Task<JsonElement>` and accept an optional `CancellationToken
 | `NarrativeAsync(symbol)` | AI-generated verbal narrative of exposure | Growth+ |
 | `ZeroDteAsync(symbol, strikeRange?)` | 0DTE regime, expected move, pin risk, hedging, decay | Growth+ |
 | `MaxPainAsync(symbol, expiration?)` | Max pain analysis with dealer alignment, pain curve, pin probability | Growth+ |
-| `ExposureHistoryAsync(symbol, days?)` | Daily exposure snapshots for trend analysis | Growth+ |
+
+### Flow (live, simulation-aware) — requires the Alpha plan
+
+Each method has a strongly-typed `*TypedAsync` variant (e.g. `FlowLevelsTypedAsync`).
+
+| Method | Description |
+|--------|-------------|
+| `FlowLevelsAsync(symbol, expiry?)` | Live gamma flip / call & put walls / max pain |
+| `FlowPinRiskAsync(symbol, expiry?)` | 0DTE pin-risk score + component breakdown |
+| `FlowSummaryAsync(symbol, expiry?)` | At-a-glance flow direction + headline GEX shift |
+| `FlowOiAsync(symbol, expiry?)` | Open-interest simulator state (official vs intraday) |
+| `FlowGexAsync(symbol, expiry?)` | Live (flow-adjusted) GEX + per-strike profile |
+| `FlowDexAsync(symbol, expiry?)` | Live (flow-adjusted) DEX + per-strike profile |
+| `FlowDealerRiskAsync(symbol, expiry?)` | Settled-vs-live dealer GEX/DEX + flow adjustment |
+| `FlowLiveAsync(symbol, expiry?)` | Everything-at-once live flow bundle |
+| `FlowOptionRecentAsync(symbol, limit?, expiry?)` | Recent option trades, newest-first |
+| `FlowOptionSummaryAsync(symbol, expiry?)` | Per-underlying option-flow aggregates |
+| `FlowOptionBlocksAsync(symbol, minSize?, expiry?)` | Large option prints (`size >= minSize`) |
+| `FlowOptionHistoryAsync(symbol, minutes?, expiry?)` | Per-minute option-flow buckets |
+| `FlowOptionCumulativeAsync(symbol, minutes?, expiry?)` | Cumulative option net-flow series |
+| `FlowStockRecentAsync(symbol, limit?)` | Recent stock trades, newest-first |
+| `FlowStockSummaryAsync(symbol)` | Per-symbol stock-flow aggregates |
+| `FlowStockBlocksAsync(symbol, minSize?)` | Large stock prints (`size >= minSize`) |
+| `FlowStockHistoryAsync(symbol, minutes?)` | Per-minute stock-flow buckets w/ OHLC |
+| `FlowStockCumulativeAsync(symbol, minutes?)` | Cumulative stock net-flow series |
+| `FlowOptionsLeaderboardAsync(n?, windowMinutes?)` | Cross-symbol option-flow leaderboard |
+| `FlowOptionsOutliersAsync(limit?, minTrades?, windowMinutes?)` | Cross-symbol option-flow outliers |
+| `FlowStocksLeaderboardAsync(n?, windowMinutes?)` | Cross-symbol stock-flow leaderboard |
+| `FlowStocksOutliersAsync(limit?, minTrades?, windowMinutes?)` | Cross-symbol stock-flow outliers |
 
 ### Pricing and Sizing
 

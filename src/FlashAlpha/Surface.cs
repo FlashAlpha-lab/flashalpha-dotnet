@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
 namespace FlashAlpha;
@@ -41,7 +40,7 @@ public sealed class SurfaceResponse
     [JsonPropertyName("iv")]
     public double[][]? Iv { get; set; }
 
-    /// <summary>Source expiries actually used in the fit (e.g. listed expiry strings).</summary>
+    /// <summary>Count of expiry slices that contributed to the surface fit.</summary>
     [JsonPropertyName("slices_used")]
-    public List<string>? SlicesUsed { get; set; }
+    public int? SlicesUsed { get; set; }
 }

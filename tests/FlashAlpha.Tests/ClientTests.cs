@@ -207,14 +207,6 @@ public sealed class ClientTests
     }
 
     [Fact]
-    public async Task ExposureHistoryAsync_WithDays_SendsQueryParam()
-    {
-        var (client, handler) = TestClientFactory.Create();
-        using (client) { await client.ExposureHistoryAsync("SPY", days: 30); }
-        Assert.Contains("days=30", handler.LastRequest!.RequestUri!.Query);
-    }
-
-    [Fact]
     public async Task StockQuoteAsync_CallsCorrectPath()
     {
         var (client, handler) = TestClientFactory.Create();
