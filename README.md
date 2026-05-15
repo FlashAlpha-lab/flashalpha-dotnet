@@ -8,6 +8,8 @@ vanna exposure (VEX), charm exposure (CHEX), implied volatility, volatility surf
 0DTE analytics, Black-Scholes greeks, Kelly criterion position sizing, and more —
 for SPX, SPY, QQQ, AAPL, and all major US equities.
 
+> 🔑 **[Get a free API key at flashalpha.com →](https://flashalpha.com)** · 📚 [API documentation](https://lab.flashalpha.com/docs) · 💹 [FlashAlpha options analytics API](https://flashalpha.com)
+
 - API documentation: https://lab.flashalpha.com/docs
 - Sign up for an API key: https://flashalpha.com
 - Python SDK: https://github.com/FlashAlpha-lab/flashalpha-python
