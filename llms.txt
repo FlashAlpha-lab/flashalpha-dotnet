@@ -51,6 +51,19 @@ replay any minute back to 2018-04-16.
 | `GET /v1/pricing/iv` | `IvAsync` | Free |
 | `GET /v1/pricing/kelly` | `KellyAsync` | Growth+ |
 | `POST /v1/screener/run` | `ScreenerAsync` | Growth+ |
+| `GET /v1/flow/{levels,pin-risk,summary,oi,gex,dex,dealer-risk,live}/{symbol}` | `FlowLevelsAsync` … `FlowLiveAsync` | Alpha+ |
+| `GET /v1/flow/{options,stocks}/{symbol}/{recent,summary,blocks,history,cumulative}` | `FlowOptionRecentAsync` … `FlowStockCumulativeAsync` | Alpha+ |
+| `GET /v1/flow/{options,stocks}/{leaderboard,outliers}` | `FlowOptionsLeaderboardAsync` … `FlowStocksOutliersAsync` | Alpha+ |
+
+### Flow — live, simulation-aware (Alpha+)
+
+22 endpoints under `/v1/flow/*`: intraday trade-tape-adjusted dealer exposure
+(live gamma flip / walls / max pain, 0DTE pin score, flow direction + GEX
+shift, OI simulator state, flow-adjusted GEX/DEX, settled-vs-live dealer risk,
+all-in-one bundle) plus the raw options/stock flow feed (per-trade prints,
+blocks, per-minute buckets, cumulative net-flow series, cross-symbol
+leaderboards/outliers). Every `Flow*Async` method has a strongly-typed
+`Flow*TypedAsync` variant.
 
 Full list: see `README.md` and the swagger playground.
 
@@ -68,10 +81,10 @@ property.
 - **Free** — quotes, surface, GEX/DEX/VEX/CHEX, levels, pricing greeks/IV,
   stock summary, tickers, options metadata, account, health.
 - **Growth+** — narrative, exposure summary, max pain, 0DTE, screener,
-  Kelly, volatility, option quotes, exposure history, historical
-  stock/option quotes.
+  Kelly, volatility, option quotes, historical stock/option quotes.
 - **Alpha+** — VRP and harvest scores, advanced volatility (SVI, variance
-  surface, arbitrage detection), Historical API access.
+  surface, arbitrage detection), the full Flow tier (22 simulation-aware
+  + raw options/stock flow endpoints), Historical API access.
 
 Sign up: <https://flashalpha.com>
 
