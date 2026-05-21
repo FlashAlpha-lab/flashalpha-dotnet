@@ -2060,4 +2060,53 @@ public sealed class IntegrationTests
                 "biggestAgeSec", "lastVwap", "lastTradeUtc", "lastTradeAgeSec" },
                 "flow/stocks/outliers.outliers[0]");
     }
+
+    private static readonly string[] SignalFields = new[] { "ts", "expiry",
+        "strike", "right", "side", "price", "size", "premium", "dte",
+        "structure", "aggressor", "open_close_bias", "open_close_confidence",
+        "contract_net_oi_delta", "intent", "score", "conviction", "tags",
+        "score_breakdown", "enrichment" };
+
+    [LiveFact]
+    public async Task Flow_Signals_AllFieldsPresent()
+    {
+        using var client = CreateClient();
+        var r = await client.FlowSignalsAsync(FlowSym, windowMinutes: 240, limit: 10);
+        RequireProps(r, new[] { "symbol", "as_of", "window_minutes", "expiry",
+            "underlying_price", "chain", "count", "signals" }, "flow/signals");
+        Assert.Equal(FlowSym, r.GetProperty("symbol").GetString());
+        RequireProps(r.GetProperty("chain"), new[] { "call_wall", "put_wall",
+            "max_pain", "gamma_flip" }, "flow/signals.chain");
+        if (FirstElem(r, "signals", out var s))
+        {
+            RequireProps(s, SignalFields, "flow/signals.signals[0]");
+            RequireProps(s.GetProperty("score_breakdown"), new[] { "premium",
+                "size_vs_oi", "aggressor", "sweep", "opening_bias", "tenor" },
+                "flow/signals.signals[0].score_breakdown");
+            RequireProps(s.GetProperty("enrichment"), new[] { "iv", "delta",
+                "gamma", "iv_vs_atm", "moneyness", "estimated_delta_notional",
+                "hypothetical_gex_impact_if_opening" },
+                "flow/signals.signals[0].enrichment");
+        }
+        var typed = await client.FlowSignalsTypedAsync(FlowSym, windowMinutes: 240, limit: 10);
+        Assert.NotNull(typed);
+        Assert.Equal(FlowSym, typed!.Symbol);
+    }
+
+    [LiveFact]
+    public async Task Flow_SignalsSummary_AllFieldsPresent()
+    {
+        using var client = CreateClient();
+        var r = await client.FlowSignalsSummaryAsync(FlowSym, windowMinutes: 240);
+        RequireProps(r, new[] { "symbol", "as_of", "window_minutes", "expiry",
+            "underlying_price", "signal_count", "bullish_premium",
+            "bearish_premium", "net_directional_premium", "opening_premium",
+            "closing_premium", "top_signals" }, "flow/signals/summary");
+        Assert.Equal(FlowSym, r.GetProperty("symbol").GetString());
+        if (FirstElem(r, "top_signals", out var s))
+            RequireProps(s, SignalFields, "flow/signals/summary.top_signals[0]");
+        var typed = await client.FlowSignalsSummaryTypedAsync(FlowSym, windowMinutes: 240);
+        Assert.NotNull(typed);
+        Assert.Equal(FlowSym, typed!.Symbol);
+    }
 }

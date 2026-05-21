@@ -803,6 +803,51 @@ public sealed class FlashAlphaClient : IDisposable
         return JsonSerializer.Deserialize<FlowStockOutliersResponse>(e.GetRawText(), PostSerializerOptions);
     }
 
+    /// <summary>
+    /// Scored unusual-flow feed for one underlying. Requires the Alpha plan.
+    /// Each notable print is coalesced into a signal, classified
+    /// (block/sweep, NBBO aggressor, opening/closing bias, intent), and
+    /// scored 0–100 with a transparent component breakdown. Ranked
+    /// highest score first.
+    /// </summary>
+    public Task<JsonElement> FlowSignalsAsync(string symbol, int? minScore = null, string? intent = null, string? structure = null, int? windowMinutes = null, int? limit = null, string? expiry = null, CancellationToken ct = default)
+    {
+        var p = new Dictionary<string, string?>();
+        if (minScore.HasValue) p["minScore"] = minScore.Value.ToString();
+        if (intent is not null) p["intent"] = intent;
+        if (structure is not null) p["structure"] = structure;
+        if (windowMinutes.HasValue) p["windowMinutes"] = windowMinutes.Value.ToString();
+        if (limit.HasValue) p["limit"] = limit.Value.ToString();
+        if (expiry is not null) p["expiry"] = expiry;
+        return GetAsync($"/v1/flow/signals/{Uri.EscapeDataString(symbol)}", p.Count > 0 ? p : null, ct);
+    }
+
+    /// <summary>Strongly-typed variant of <see cref="FlowSignalsAsync"/>.</summary>
+    public async Task<FlowSignalsResponse?> FlowSignalsTypedAsync(string symbol, int? minScore = null, string? intent = null, string? structure = null, int? windowMinutes = null, int? limit = null, string? expiry = null, CancellationToken ct = default)
+    {
+        var e = await FlowSignalsAsync(symbol, minScore, intent, structure, windowMinutes, limit, expiry, ct).ConfigureAwait(false);
+        return JsonSerializer.Deserialize<FlowSignalsResponse>(e.GetRawText(), PostSerializerOptions);
+    }
+
+    /// <summary>
+    /// Net bullish/bearish + opening/closing premium roll-up plus the top
+    /// 10 signals. Cheap "smart-money tilt" read. Requires the Alpha plan.
+    /// </summary>
+    public Task<JsonElement> FlowSignalsSummaryAsync(string symbol, int? windowMinutes = null, string? expiry = null, CancellationToken ct = default)
+    {
+        var p = new Dictionary<string, string?>();
+        if (windowMinutes.HasValue) p["windowMinutes"] = windowMinutes.Value.ToString();
+        if (expiry is not null) p["expiry"] = expiry;
+        return GetAsync($"/v1/flow/signals/{Uri.EscapeDataString(symbol)}/summary", p.Count > 0 ? p : null, ct);
+    }
+
+    /// <summary>Strongly-typed variant of <see cref="FlowSignalsSummaryAsync"/>.</summary>
+    public async Task<FlowSignalsSummaryResponse?> FlowSignalsSummaryTypedAsync(string symbol, int? windowMinutes = null, string? expiry = null, CancellationToken ct = default)
+    {
+        var e = await FlowSignalsSummaryAsync(symbol, windowMinutes, expiry, ct).ConfigureAwait(false);
+        return JsonSerializer.Deserialize<FlowSignalsSummaryResponse>(e.GetRawText(), PostSerializerOptions);
+    }
+
     // ── Pricing & Sizing ──────────────────────────────────────────────────────
 
     /// <summary>Full Black-Scholes-Merton greeks (first, second, and third order).</summary>

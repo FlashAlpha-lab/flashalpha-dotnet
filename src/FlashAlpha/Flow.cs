@@ -764,3 +764,189 @@ public sealed class FlowStockOutliersResponse
     /// <summary>Imbalance-ranked flagged symbols.</summary>
     [JsonPropertyName("outliers")] public List<FlowOutlierRow> Outliers { get; set; } = new();
 }
+
+// ── Flow signals (unusual-flow feed, Alpha+) ─────────────────────────
+//
+// Per-underlying scored/classified unusual-flow signals. Snake_case wire
+// shape (analytics family). Both endpoints reuse FlowSignal.
+
+/// <summary>Settled-chain reference levels echoed alongside the signals.
+/// Computed once per request from the settled snapshot — independent of
+/// the live flow surface. All fields are null when the chain snapshot is
+/// unavailable.</summary>
+public sealed class FlowSignalsChain
+{
+    /// <summary>Strike with the largest settled call GEX — upside dealer-defended level.</summary>
+    [JsonPropertyName("call_wall")] public double? CallWall { get; set; }
+    /// <summary>Strike with the largest settled put GEX — downside dealer-defended level.</summary>
+    [JsonPropertyName("put_wall")] public double? PutWall { get; set; }
+    /// <summary>Strike where total option-holder loss is maximized at expiry.</summary>
+    [JsonPropertyName("max_pain")] public double? MaxPain { get; set; }
+    /// <summary>Settled gamma-flip strike (sign change of net GEX across the chain).</summary>
+    [JsonPropertyName("gamma_flip")] public double? GammaFlip { get; set; }
+}
+
+/// <summary>Component contributions that sum to the headline
+/// <c>score</c>. Weights are server-tunable so absolute values may
+/// shift, but the ordering of components is stable.</summary>
+public sealed class FlowSignalScoreBreakdown
+{
+    /// <summary>Premium-size contribution (the larger the dollar premium, the more points).</summary>
+    [JsonPropertyName("premium")] public int? Premium { get; set; }
+    /// <summary>Print size relative to the contract's open interest.</summary>
+    [JsonPropertyName("size_vs_oi")] public int? SizeVsOi { get; set; }
+    /// <summary>NBBO aggressor strength — above-ask / at-ask earn more than mid.</summary>
+    [JsonPropertyName("aggressor")] public int? Aggressor { get; set; }
+    /// <summary>Sweep boost (≥2 same-side prints on one contract within ~500ms).</summary>
+    [JsonPropertyName("sweep")] public int? Sweep { get; set; }
+    /// <summary>OI-simulator opening-bias contribution.</summary>
+    [JsonPropertyName("opening_bias")] public int? OpeningBias { get; set; }
+    /// <summary>Tenor (DTE) contribution — short-dated prints score differently than long-dated.</summary>
+    [JsonPropertyName("tenor")] public int? Tenor { get; set; }
+}
+
+/// <summary>Chain-derived context attached to a signal. All numeric
+/// fields are null and <see cref="Moneyness"/> is <c>"unknown"</c> when
+/// the contract isn't in the settled chain snapshot.</summary>
+public sealed class FlowSignalEnrichment
+{
+    /// <summary>Contract implied vol (decimal, e.g. <c>0.62</c> = 62%).</summary>
+    [JsonPropertyName("iv")] public double? Iv { get; set; }
+    /// <summary>Contract delta (signed; positive for calls, negative for puts).</summary>
+    [JsonPropertyName("delta")] public double? Delta { get; set; }
+    /// <summary>Contract gamma (per-share).</summary>
+    [JsonPropertyName("gamma")] public double? Gamma { get; set; }
+    /// <summary>IV minus the nearest ATM IV (signed).</summary>
+    [JsonPropertyName("iv_vs_atm")] public double? IvVsAtm { get; set; }
+    /// <summary><c>"OTM"</c> / <c>"ATM"</c> / <c>"ITM"</c> / <c>"unknown"</c>.</summary>
+    [JsonPropertyName("moneyness")] public string Moneyness { get; set; } = "";
+    /// <summary>Estimated dollar delta-notional of this print.</summary>
+    [JsonPropertyName("estimated_delta_notional")] public double? EstimatedDeltaNotional { get; set; }
+    /// <summary>Standalone gamma-$ this print would add if it were
+    /// opening and fully dealer-absorbed. <strong>Not</strong> applied to
+    /// the live chain — don't sum it against <c>/v1/flow/gex</c>.</summary>
+    [JsonPropertyName("hypothetical_gex_impact_if_opening")] public double? HypotheticalGexImpactIfOpening { get; set; }
+}
+
+/// <summary>One scored unusual-flow signal — a coalesced view of one
+/// notable (block-sized) print on a single contract. Same shape across
+/// <c>GET /v1/flow/signals/{symbol}</c> and the <c>top_signals</c> array
+/// of <c>GET /v1/flow/signals/{symbol}/summary</c>.</summary>
+public sealed class FlowSignal
+{
+    /// <summary>Trade timestamp (ISO-8601 UTC).</summary>
+    [JsonPropertyName("ts")] public string Ts { get; set; } = "";
+    /// <summary>Contract expiry (<c>YYYY-MM-DD</c>).</summary>
+    [JsonPropertyName("expiry")] public string Expiry { get; set; } = "";
+    /// <summary>Contract strike price.</summary>
+    [JsonPropertyName("strike")] public double? Strike { get; set; }
+    /// <summary><c>"C"</c> (call) or <c>"P"</c> (put).</summary>
+    [JsonPropertyName("right")] public string Right { get; set; } = "";
+    /// <summary>Upstream buy/sell/mid aggressor classification (distinct
+    /// from the NBBO <see cref="Aggressor"/> label).</summary>
+    [JsonPropertyName("side")] public string Side { get; set; } = "";
+    /// <summary>Trade price.</summary>
+    [JsonPropertyName("price")] public double? Price { get; set; }
+    /// <summary>Trade size in contracts.</summary>
+    [JsonPropertyName("size")] public long? Size { get; set; }
+    /// <summary>Dollar premium of this print: <c>price * size * 100</c>.</summary>
+    [JsonPropertyName("premium")] public double? Premium { get; set; }
+    /// <summary>Days to expiry at trade time.</summary>
+    [JsonPropertyName("dte")] public int? Dte { get; set; }
+    /// <summary><c>"block"</c> (lone block-sized print) or <c>"sweep"</c>
+    /// (≥2 same-side prints on one contract within ~500ms).</summary>
+    [JsonPropertyName("structure")] public string Structure { get; set; } = "";
+    /// <summary>NBBO position at trade: <c>"above_ask"</c> /
+    /// <c>"at_ask"</c> / <c>"mid"</c> / <c>"at_bid"</c> /
+    /// <c>"below_bid"</c>.</summary>
+    [JsonPropertyName("aggressor")] public string Aggressor { get; set; } = "";
+    /// <summary>Contract-level OI-simulator inference:
+    /// <c>"opening_bias"</c> / <c>"closing_bias"</c> / <c>"unknown"</c>.
+    /// Not a per-print label.</summary>
+    [JsonPropertyName("open_close_bias")] public string OpenCloseBias { get; set; } = "";
+    /// <summary>Simulator confidence weight for the bias above.</summary>
+    [JsonPropertyName("open_close_confidence")] public double? OpenCloseConfidence { get; set; }
+    /// <summary>Signed simulator estimate of contracts opened (+) or
+    /// closed (−) today on this contract.</summary>
+    [JsonPropertyName("contract_net_oi_delta")] public long? ContractNetOiDelta { get; set; }
+    /// <summary><c>"bullish"</c> / <c>"bearish"</c> / <c>"neutral"</c>.
+    /// Neutral whenever <see cref="OpenCloseBias"/> ==
+    /// <c>"closing_bias"</c> (can't attribute on unwinds) or
+    /// <see cref="Side"/> == <c>"mid"</c>.</summary>
+    [JsonPropertyName("intent")] public string Intent { get; set; } = "";
+    /// <summary>0–100 composite (<see cref="ScoreBreakdown"/> components
+    /// sum to this).</summary>
+    [JsonPropertyName("score")] public int? Score { get; set; }
+    /// <summary><c>"low"</c> / <c>"medium"</c> / <c>"high"</c>.</summary>
+    [JsonPropertyName("conviction")] public string Conviction { get; set; } = "";
+    /// <summary>Subset of <c>"sweep"</c>, <c>"block"</c>, <c>"opening"</c>,
+    /// <c>"closing"</c>, <c>"0dte"</c>, <c>"whale"</c> (premium ≥ $1M),
+    /// <c>"golden"</c> (top decile in this response set AND score ≥ 70
+    /// absolute).</summary>
+    [JsonPropertyName("tags")] public List<string> Tags { get; set; } = new();
+    /// <summary>Score components — sum to <see cref="Score"/>.</summary>
+    [JsonPropertyName("score_breakdown")] public FlowSignalScoreBreakdown? ScoreBreakdown { get; set; }
+    /// <summary>Chain-derived context (greeks, moneyness, estimated delta-notional).</summary>
+    [JsonPropertyName("enrichment")] public FlowSignalEnrichment? Enrichment { get; set; }
+}
+
+/// <summary>Typed response for <c>GET /v1/flow/signals/{symbol}</c>
+/// (Alpha+). Scored, classified unusual-flow feed — each notable print
+/// in the look-back window is coalesced into a signal, scored 0–100,
+/// and ranked highest score first.</summary>
+public sealed class FlowSignalsResponse
+{
+    /// <summary>Underlying ticker echoed from the request path.</summary>
+    [JsonPropertyName("symbol")] public string Symbol { get; set; } = "";
+    /// <summary>Timestamp this snapshot was computed for (ISO-8601 UTC).</summary>
+    [JsonPropertyName("as_of")] public string AsOf { get; set; } = "";
+    /// <summary>Look-back window applied (minutes).</summary>
+    [JsonPropertyName("window_minutes")] public int? WindowMinutes { get; set; }
+    /// <summary>Expiration filter echoed back, or null.</summary>
+    [JsonPropertyName("expiry")] public string? Expiry { get; set; }
+    /// <summary>Spot mid at the snapshot time.</summary>
+    [JsonPropertyName("underlying_price")] public double? UnderlyingPrice { get; set; }
+    /// <summary>Settled-chain reference levels (computed once per request).</summary>
+    [JsonPropertyName("chain")] public FlowSignalsChain? Chain { get; set; }
+    /// <summary>Number of signals returned (after server-side filtering).</summary>
+    [JsonPropertyName("count")] public int? Count { get; set; }
+    /// <summary>Signals, highest score first.</summary>
+    [JsonPropertyName("signals")] public List<FlowSignal> Signals { get; set; } = new();
+}
+
+/// <summary>Typed response for
+/// <c>GET /v1/flow/signals/{symbol}/summary</c> (Alpha+). Sums
+/// classified premium across the window into bullish/bearish and
+/// opening/closing buckets — a cheap "smart-money tilt" read for one
+/// underlying.</summary>
+public sealed class FlowSignalsSummaryResponse
+{
+    /// <summary>Underlying ticker echoed from the request path.</summary>
+    [JsonPropertyName("symbol")] public string Symbol { get; set; } = "";
+    /// <summary>Timestamp this snapshot was computed for (ISO-8601 UTC).</summary>
+    [JsonPropertyName("as_of")] public string AsOf { get; set; } = "";
+    /// <summary>Look-back window applied (minutes).</summary>
+    [JsonPropertyName("window_minutes")] public int? WindowMinutes { get; set; }
+    /// <summary>Expiration filter echoed back, or null.</summary>
+    [JsonPropertyName("expiry")] public string? Expiry { get; set; }
+    /// <summary>Spot mid at the snapshot time.</summary>
+    [JsonPropertyName("underlying_price")] public double? UnderlyingPrice { get; set; }
+    /// <summary>Total signal count in the window (full count, not the
+    /// <see cref="TopSignals"/> length).</summary>
+    [JsonPropertyName("signal_count")] public int? SignalCount { get; set; }
+    /// <summary>Sum of signal premium with <c>intent == "bullish"</c>.</summary>
+    [JsonPropertyName("bullish_premium")] public double? BullishPremium { get; set; }
+    /// <summary>Sum of signal premium with <c>intent == "bearish"</c>.</summary>
+    [JsonPropertyName("bearish_premium")] public double? BearishPremium { get; set; }
+    /// <summary><c>bullish_premium - bearish_premium</c>.</summary>
+    [JsonPropertyName("net_directional_premium")] public double? NetDirectionalPremium { get; set; }
+    /// <summary>Sum of signal premium with
+    /// <c>open_close_bias == "opening_bias"</c>.</summary>
+    [JsonPropertyName("opening_premium")] public double? OpeningPremium { get; set; }
+    /// <summary>Sum of signal premium with
+    /// <c>open_close_bias == "closing_bias"</c>.</summary>
+    [JsonPropertyName("closing_premium")] public double? ClosingPremium { get; set; }
+    /// <summary>Highest-scoring signals (≤ 10). Same shape as
+    /// <see cref="FlowSignal"/>.</summary>
+    [JsonPropertyName("top_signals")] public List<FlowSignal> TopSignals { get; set; } = new();
+}

@@ -117,6 +117,8 @@ Each method has a strongly-typed `*TypedAsync` variant (e.g. `FlowLevelsTypedAsy
 | `FlowDexAsync(symbol, expiry?)` | Live (flow-adjusted) DEX + per-strike profile |
 | `FlowDealerRiskAsync(symbol, expiry?)` | Settled-vs-live dealer GEX/DEX + flow adjustment |
 | `FlowLiveAsync(symbol, expiry?)` | Everything-at-once live flow bundle |
+| `FlowSignalsAsync(symbol, minScore?, intent?, structure?, windowMinutes?, limit?, expiry?)` | Scored, classified unusual-flow feed (block/sweep, intent, 0-100 score) |
+| `FlowSignalsSummaryAsync(symbol, windowMinutes?, expiry?)` | Net bullish/bearish + opening/closing premium roll-up + top 10 signals |
 | `FlowOptionRecentAsync(symbol, limit?, expiry?)` | Recent option trades, newest-first |
 | `FlowOptionSummaryAsync(symbol, expiry?)` | Per-underlying option-flow aggregates |
 | `FlowOptionBlocksAsync(symbol, minSize?, expiry?)` | Large option prints (`size >= minSize`) |
