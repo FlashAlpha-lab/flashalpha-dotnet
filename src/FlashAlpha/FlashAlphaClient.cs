@@ -13,7 +13,7 @@ namespace FlashAlpha;
 /// Thin HTTP wrapper around the FlashAlpha options analytics REST API.
 /// See https://flashalpha.com for API documentation and subscription plans.
 /// </summary>
-public sealed class FlashAlphaClient : IDisposable
+public sealed partial class FlashAlphaClient : IDisposable
 {
     private const string DefaultBaseUrl = "https://lab.flashalpha.com";
 
@@ -437,23 +437,32 @@ public sealed class FlashAlphaClient : IDisposable
         return element.Deserialize<NarrativeResponse>(PostSerializerOptions);
     }
 
-    /// <summary>Real-time 0DTE analytics: regime, expected move, pin risk, hedging, decay. Requires Growth+.</summary>
-    public Task<JsonElement> ZeroDteAsync(string symbol, double? strikeRange = null, CancellationToken ct = default)
+    /// <summary>
+    /// Real-time 0DTE analytics: regime, expected move, pin risk, hedging, decay. Requires Growth+.
+    /// </summary>
+    /// <param name="symbol">Underlying symbol.</param>
+    /// <param name="strikeRange">Fraction of spot to include in the strikes array (0.001–0.10).</param>
+    /// <param name="expiry">
+    /// Optional target expiry (<c>yyyy-MM-dd</c>). Selects 1DTE / 2DTE / any expiry via the same
+    /// 0DTE selector; omit for today's same-day expiry.
+    /// </param>
+    public Task<JsonElement> ZeroDteAsync(string symbol, double? strikeRange = null, string? expiry = null, CancellationToken ct = default)
     {
         var p = new Dictionary<string, string?>();
         if (strikeRange.HasValue) p["strike_range"] = strikeRange.Value.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        if (expiry is not null) p["expiry"] = expiry;
         return GetAsync($"/v1/exposure/zero-dte/{Uri.EscapeDataString(symbol)}", p.Count > 0 ? p : null, ct);
     }
 
     /// <summary>
-    /// Strongly-typed variant of <see cref="ZeroDteAsync(string, double?, CancellationToken)"/>.
+    /// Strongly-typed variant of <see cref="ZeroDteAsync(string, double?, string?, CancellationToken)"/>.
     /// Returns a <see cref="ZeroDteResponse"/> POCO with snake_case → PascalCase field
-    /// mappings for every documented field. The original <see cref="ZeroDteAsync(string, double?, CancellationToken)"/>
+    /// mappings for every documented field. The original <see cref="ZeroDteAsync(string, double?, string?, CancellationToken)"/>
     /// remains unchanged.
     /// </summary>
-    public async Task<ZeroDteResponse> ZeroDteTypedAsync(string symbol, double? strikeRange = null, CancellationToken ct = default)
+    public async Task<ZeroDteResponse> ZeroDteTypedAsync(string symbol, double? strikeRange = null, string? expiry = null, CancellationToken ct = default)
     {
-        var element = await ZeroDteAsync(symbol, strikeRange, ct).ConfigureAwait(false);
+        var element = await ZeroDteAsync(symbol, strikeRange, expiry, ct).ConfigureAwait(false);
         var typed = element.Deserialize<ZeroDteResponse>(PostSerializerOptions);
         return typed ?? new ZeroDteResponse();
     }
@@ -1059,18 +1068,30 @@ public sealed class FlashAlphaClient : IDisposable
     ///   <item><c>result.GetProperty("term_vrp")</c> — array of <c>{dte, iv, rv, vrp}</c></item>
     /// </list>
     /// </remarks>
-    public Task<JsonElement> VrpAsync(string symbol, CancellationToken ct = default)
-        => GetAsync($"/v1/vrp/{Uri.EscapeDataString(symbol)}", null, ct);
+    /// <param name="symbol">Stock/ETF ticker (e.g. <c>SPY</c>, <c>QQQ</c>, <c>TSLA</c>).</param>
+    /// <param name="date">
+    /// Optional historical date (<c>yyyy-MM-dd</c>). When supplied, returns the persisted
+    /// VRP snapshot for that date instead of the live dashboard (<c>404</c> if no snapshot
+    /// exists for that date). Omit for the live snapshot.
+    /// </param>
+    public Task<JsonElement> VrpAsync(string symbol, string? date = null, CancellationToken ct = default)
+    {
+        var p = new Dictionary<string, string?>();
+        if (date is not null) p["date"] = date;
+        return GetAsync($"/v1/vrp/{Uri.EscapeDataString(symbol)}", p.Count > 0 ? p : null, ct);
+    }
 
     /// <summary>
-    /// Strongly-typed variant of <see cref="VrpAsync(string, CancellationToken)"/>.
+    /// Strongly-typed variant of <see cref="VrpAsync(string, string?, CancellationToken)"/>.
     /// Returns a <see cref="VrpResponse"/> POCO covering core VRP metrics, directional skew,
     /// gamma-regime conditioning, regime snapshot, strategy scores, and term-VRP series.
-    /// The original <see cref="VrpAsync(string, CancellationToken)"/> remains unchanged.
+    /// The original <see cref="VrpAsync(string, string?, CancellationToken)"/> remains unchanged.
     /// </summary>
-    public async Task<VrpResponse?> VrpTypedAsync(string symbol, CancellationToken ct = default)
+    /// <param name="symbol">Stock/ETF ticker (e.g. <c>SPY</c>).</param>
+    /// <param name="date">Optional historical date (<c>yyyy-MM-dd</c>) for a persisted snapshot; omit for live.</param>
+    public async Task<VrpResponse?> VrpTypedAsync(string symbol, string? date = null, CancellationToken ct = default)
     {
-        var element = await VrpAsync(symbol, ct).ConfigureAwait(false);
+        var element = await VrpAsync(symbol, date, ct).ConfigureAwait(false);
         return element.Deserialize<VrpResponse>(PostSerializerOptions);
     }
 
@@ -1156,6 +1177,7 @@ public sealed class FlashAlphaClient : IDisposable
     /// Alpha: ~250 symbols, up to 50 rows, formulas, and harvest/dealer-flow-risk scores.
     /// </summary>
     /// <param name="request">Screener request with filters, sort, select, formulas, limit, offset.</param>
+    /// <param name="ct">Cancellation token.</param>
     public Task<JsonElement> ScreenerAsync(ScreenerRequest request, CancellationToken ct = default)
         => PostAsync("/v1/screener", request, ct);
 

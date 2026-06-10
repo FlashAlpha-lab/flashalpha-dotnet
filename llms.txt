@@ -44,9 +44,31 @@ replay any minute back to 2018-04-16.
 | `GET /v1/exposure/levels/{symbol}` | `ExposureLevelsAsync` | Free |
 | `GET /v1/exposure/summary/{symbol}` | `ExposureSummaryAsync` | Growth+ |
 | `GET /v1/exposure/narrative/{symbol}` | `NarrativeAsync` | Growth+ |
-| `GET /v1/exposure/zero-dte/{symbol}` | `ZeroDteAsync` | Growth+ |
+| `GET /v1/exposure/zero-dte/{symbol}` | `ZeroDteAsync` (now takes `expiry?`) | Growth+ |
+| `GET /v1/exposure/sheet/{symbol}` | `ExposureSheetAsync` | Growth+ |
+| `GET /v1/exposure/term-structure/{symbol}` | `ExposureTermStructureAsync` | Growth+ |
+| `GET /v1/exposure/basket` | `ExposureBasketAsync` | Growth+ |
+| `GET /v1/exposure/oi-diff/{symbol}` | `ExposureOiDiffAsync` | Growth+ |
 | `GET /v1/maxpain/{symbol}` | `MaxPainAsync` | Growth+ |
-| `GET /v1/vrp/{symbol}` | `VrpAsync` | Alpha+ |
+| `GET /v1/surface/svi/{symbol}` | `SurfaceSviAsync` | Alpha+ |
+| `GET /v1/liquidity/{symbol}` | `LiquidityAsync` | Growth+ |
+| `GET /v1/volatility/skew-term/{symbol}` | `SkewTermAsync` | Growth+ |
+| `GET /v1/volatility/spot-vol-correlation/{symbol}` | `SpotVolCorrelationAsync` | Growth+ |
+| `GET /v1/volatility/realized/{symbol}` | `RealizedVolatilityAsync` | Alpha+ |
+| `GET /v1/volatility/forecast/{symbol}` | `VolatilityForecastAsync` | Alpha+ |
+| `GET /v1/dispersion` | `DispersionAsync` | Alpha+ |
+| `GET /v1/expected-move/{symbol}` | `ExpectedMoveAsync` | Basic+ |
+| `GET /v1/macro/vix-state` | `VixStateAsync` | Growth+ |
+| `GET /v1/universe` | `UniverseAsync` | Public |
+| `GET /v1/vrp/{symbol}` | `VrpAsync` (now takes `date?`) | Alpha+ |
+| `GET /v1/vrp/{symbol}/history` | `VrpHistoryAsync` | Alpha+ |
+| `GET /v1/strategies/{kind}/{symbol}` | `StrategyFlowAnomalyAsync` … `StrategyTailPricingAsync` (10) | Basic+/Growth+/Alpha+ |
+| `GET /v1/earnings/{calendar,expected-move,history,iv-crush,vrp,dealer-positioning,strategies,screener}` | `EarningsCalendarAsync` … `EarningsScreenerAsync` (8) | Growth+/Alpha+ |
+| `POST /v1/structures/{pnl,greeks}` | `StructurePnlAsync` / `StructureGreeksAsync` | Basic+ |
+| `GET /v1/flow/zero-dte/{snapshot,series,hedge-flow,heatmap,strike-flow}/{symbol}` | `FlowZeroDteSnapshotAsync` … `FlowZeroDteStrikeFlowAsync` (5) | Growth+/Alpha+ |
+| `GET /v1/flow/options/{symbol}/dealer-premium` | `FlowDealerPremiumAsync` | Alpha+ |
+| `GET /v1/flow/stocks/{symbol}/bars` | `FlowStockBarsAsync` | Alpha+ |
+| `GET /v1/screener/fields` | `ScreenerFieldsAsync` | Free+ |
 | `GET /v1/pricing/greeks` | `GreeksAsync` | Free |
 | `GET /v1/pricing/iv` | `IvAsync` | Free |
 | `GET /v1/pricing/kelly` | `KellyAsync` | Growth+ |
@@ -71,24 +93,92 @@ strongly-typed `Flow*TypedAsync` variant.
 
 Full list: see `README.md` and the swagger playground.
 
+### Strategy signals (Basic+/Growth+/Alpha+)
+
+Ten named strategy endpoints under `/v1/strategies/*`, all returning the shared
+`StrategyDecisionResponse` envelope (decision, conviction, scored multi-leg
+structure proposal, supporting context): flow-anomaly, expiry-positioning (OPEX
+pin / iron fly), zero-dte intraday structure, dealer-regime (gamma sign),
+vol-carry harvesting, yield-enhancement (covered call / cash-secured put),
+surface-anomaly (vol-arb), skew (risk-reversal / put-skew), term-structure
+(calendar / diagonal), tail-pricing (cheap convexity). Each has a typed
+`*TypedAsync` variant.
+
+### Earnings analytics (Growth+/Alpha+)
+
+Earnings-event options analytics under `/v1/earnings/*`: forward earnings
+calendar, earnings-implied (straddle) expected move, historical implied-vs-realized
+reactions + surprises, post-earnings IV crush, earnings variance risk premium
+(VRP), dealer positioning into the event, earnings-aware strategy scores
+(straddle / strangle / iron-condor), and a cross-sectional earnings screener
+(rank by VRP richness / cheapest move / highest crush / importance).
+
+### Multi-leg structures — pure math (Basic+)
+
+`POST /v1/structures/pnl` and `POST /v1/structures/greeks` price any multi-leg
+options structure with no symbol lookup: at-expiry P&L curve, breakevens, max
+profit/loss, and aggregated quantity-scaled direction-signed position Greeks.
+
+### Intraday 0DTE flow (Growth+/Alpha+)
+
+`/v1/flow/zero-dte/*`: live 0DTE flow snapshot (0DTE dealer analytics + flow
+direction), intraday flow time series, estimated dealer hedge-flow series,
+strike × time heatmap (GEX/DEX/VEX/CHEX/OI/signed-flow), and per-strike signed
+aggressor flow. `ZeroDteFlowSnapshotResponse` derives from `ZeroDteResponse`.
+
+### Extended exposure, volatility, macro & dispersion
+
+Extended exposure: per-strike dealer exposure sheet, exposure term structure,
+weighted cross-symbol exposure basket, and OI-diff (largest open-interest
+changes). Volatility: liquidity scoring, skew + term-structure (25-delta risk
+reversals), spot–vol correlation (leverage effect), dispersion / vol-arb
+(implied vs realized correlation, index vs basket), options-implied expected
+move, and historical VRP. Macro: VIX-state regime (contango/backwardation,
+VIX/VIX3M, percentiles) and the curated symbol universe. Surface: calibrated
+SVI parameters per expiry slice.
+
 ## Typed response models
 
 The headline analytics endpoints have typed POCOs (`StockSummaryResponse`,
 `ExposureSummaryResponse`, `ExposureLevelsResponse`, `NarrativeResponse`,
 `MaxPainResponse`, `VrpResponse`, `ZeroDteResponse`, `PricingGreeksResponse`,
-`ScreenerResponse`). All use `System.Text.Json.Serialization.JsonPropertyName`
-and nullable reference types, so a `null` from the wire surfaces as a `null`
-property.
+`ScreenerResponse`). The 1.1.0 endpoint families add typed models too:
+`StrategyDecisionResponse` (shared by all 10 strategy signals), the earnings
+suite (`EarningsCalendarResponse`, `EarningsExpectedMoveResponse`,
+`EarningsHistoryResponse`, `EarningsIvCrushResponse`, `EarningsVrpResponse`,
+`EarningsDealerPositioningResponse`, `EarningsStrategiesResponse`,
+`EarningsScreenerResponse`), structures (`StructurePnlRequest`/`Response`,
+`StructureGreeksRequest`/`Response`), zero-dte flow
+(`ZeroDteFlowSnapshotResponse` deriving from `ZeroDteResponse`,
+`ZeroDteFlowSeriesResponse`, `ZeroDteFlowHedgeFlowResponse`,
+`ZeroDteFlowHeatmapResponse`, `ZeroDteFlowStrikeFlowResponse`), and the
+exposure/volatility/macro extras (`ExposureSheetResponse`,
+`ExposureTermStructureResponse`, `ExposureBasketResponse`,
+`ExposureOiDiffResponse`, `LiquidityResponse`, `SkewTermResponse`,
+`SpotVolCorrelationResponse`, `DispersionResponse`, `ExpectedMoveResponse`,
+`VrpHistoryResponse`, `VixStateResponse`, `UniverseResponse`,
+`SurfaceSviResponse`, `FlowDealerPremiumResponse`, `FlowStockBarsResponse`,
+`ScreenerFieldsResponse`). All use
+`System.Text.Json.Serialization.JsonPropertyName` and nullable reference types,
+so a `null` from the wire surfaces as a `null` property.
 
 ## Tier breakdown
 
 - **Free** — quotes, surface, GEX/DEX/VEX/CHEX, levels, pricing greeks/IV,
-  stock summary, tickers, options metadata, account, health.
-- **Growth+** — narrative, exposure summary, max pain, 0DTE, screener,
-  Kelly, volatility, option quotes, historical stock/option quotes.
-- **Alpha+** — VRP and harvest scores, advanced volatility (SVI, variance
-  surface, arbitrage detection), the full Flow tier (24 simulation-aware
-  + signals + raw options/stock flow endpoints), Historical API access.
+  stock summary, tickers, options metadata, universe, screener fields,
+  account, health.
+- **Basic+** — expected move, multi-leg structure P&L / Greeks (pure math),
+  expiry-positioning strategy signal.
+- **Growth+** — narrative, exposure summary/sheet/term-structure/basket/oi-diff,
+  max pain, 0DTE + intraday 0DTE flow, screener, Kelly, volatility, liquidity,
+  skew-term, spot-vol correlation, vix-state, option quotes, historical
+  stock/option quotes, earnings analytics, most strategy signals.
+- **Alpha+** — VRP + history + harvest scores, advanced volatility (SVI surface,
+  variance surface, arbitrage detection), SVI surface params, dispersion / vol-arb,
+  the full Flow tier (24 simulation-aware + signals + dealer-premium + stock bars
+  + raw options/stock flow endpoints), 0DTE heatmap / strike-flow, Alpha-tier
+  strategy signals (vol-carry, surface-anomaly) and earnings (VRP, dealer
+  positioning, strategies, screener), Historical API access.
 
 Sign up: <https://flashalpha.com>
 

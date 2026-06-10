@@ -80,6 +80,7 @@ All methods return `Task<JsonElement>` and accept an optional `CancellationToken
 | `StockQuoteAsync(ticker)` | Live stock quote (bid/ask/mid/last) | Free |
 | `OptionQuoteAsync(ticker, expiry?, strike?, type?)` | Option quotes with greeks | Growth+ |
 | `SurfaceAsync(symbol)` | Volatility surface grid | Free |
+| `SurfaceSviAsync(symbol)` | Calibrated SVI surface parameters per expiry slice | Alpha+ |
 | `StockSummaryAsync(symbol)` | Comprehensive stock summary (price, vol, exposure, macro) | Free |
 
 ### Historical Data
@@ -100,8 +101,12 @@ All methods return `Task<JsonElement>` and accept an optional `CancellationToken
 | `ExposureLevelsAsync(symbol)` | Key support/resistance levels from options exposure | Free |
 | `ExposureSummaryAsync(symbol)` | Full GEX/DEX/VEX/CHEX summary + hedging pressure | Growth+ |
 | `NarrativeAsync(symbol)` | AI-generated verbal narrative of exposure | Growth+ |
-| `ZeroDteAsync(symbol, strikeRange?)` | 0DTE regime, expected move, pin risk, hedging, decay | Growth+ |
+| `ZeroDteAsync(symbol, strikeRange?, expiry?)` | 0DTE regime, expected move, pin risk, hedging, decay | Growth+ |
 | `MaxPainAsync(symbol, expiration?)` | Max pain analysis with dealer alignment, pain curve, pin probability | Growth+ |
+| `ExposureSheetAsync(symbol, expiration?, minOi?)` | Per-strike GEX/DEX/VEX/CHEX dealer exposure sheet with totals, levels, peaks | Growth+ |
+| `ExposureTermStructureAsync(symbol)` | Net GEX/DEX/VEX/CHEX broken out by expiry bucket (term structure of exposure) | Growth+ |
+| `ExposureBasketAsync(symbols, weights?)` | Weighted cross-symbol exposure aggregate (up to 50 symbols) | Growth+ |
+| `ExposureOiDiffAsync(symbol, topN?)` | Largest open-interest changes since the prior snapshot | Growth+ |
 
 ### Flow (live, simulation-aware) — requires the Alpha plan
 
@@ -133,6 +138,8 @@ Each method has a strongly-typed `*TypedAsync` variant (e.g. `FlowLevelsTypedAsy
 | `FlowOptionsOutliersAsync(limit?, minTrades?, windowMinutes?)` | Cross-symbol option-flow outliers |
 | `FlowStocksLeaderboardAsync(n?, windowMinutes?)` | Cross-symbol stock-flow leaderboard |
 | `FlowStocksOutliersAsync(limit?, minTrades?, windowMinutes?)` | Cross-symbol stock-flow outliers |
+| `FlowStockBarsAsync(symbol, resolution, minutes?)` | Multi-resolution OHLCV + flow bars from the live trade tape |
+| `FlowDealerPremiumAsync(symbol, windowMinutes?, expiry?)` | Net dealer premium roll-up over the full tape (VWAP-weighted) |
 
 ### Pricing and Sizing
 
@@ -148,6 +155,69 @@ Each method has a strongly-typed `*TypedAsync` variant (e.g. `FlowLevelsTypedAsy
 |--------|-------------|------|
 | `VolatilityAsync(symbol)` | Comprehensive volatility analysis | Growth+ |
 | `AdvVolatilityAsync(symbol)` | SVI parameters, variance surface, arbitrage detection, variance swap | Alpha+ |
+| `LiquidityAsync(symbol)` | Per-expiry execution / liquidity score (ATM spread %, OI-weighted spread %, depth) | Growth+ |
+| `SkewTermAsync(symbol)` | Skew + term-structure of IV (25-delta risk reversals, ATM term curve) | Growth+ |
+| `SpotVolCorrelationAsync(symbol)` | Spot–vol correlation / leverage-effect regime | Growth+ |
+| `RealizedVolatilityAsync(symbol)` | Range-based realized vol estimators (close-to-close, Parkinson, Garman-Klass, Rogers-Satchell, Yang-Zhang) over 10/20/30-day windows | Alpha+ |
+| `VolatilityForecastAsync(symbol, dist?)` | Conditional vol forecasts (EWMA λ=0.94, HAR-RV, GARCH(1,1) MLE with multi-horizon term structure) | Alpha+ |
+| `DispersionAsync(index, symbols, weights?, horizonDays?)` | Implied vs realized correlation (dispersion / vol-arb) for an index vs a basket | Alpha+ |
+| `ExpectedMoveAsync(symbol, expiry?)` | Options-implied expected move (straddle-derived) per expiry | Basic+ |
+| `VrpHistoryAsync(symbol, days?)` | Historical variance-risk-premium (VRP) time series | Alpha+ |
+
+### Macro / Universe
+
+| Method | Description | Plan |
+|--------|-------------|------|
+| `VixStateAsync()` | VIX term-structure regime (contango/backwardation, VIX/VIX3M, percentiles) | Growth+ |
+| `UniverseAsync(sort?, limit?)` | Curated tier-1 / tier-2 pre-warmed symbol universe | Public |
+
+### Strategy Signals
+
+All ten endpoints return the shared `StrategyDecisionResponse` envelope (decision,
+conviction, scored structure proposal, context). Each has a `*TypedAsync` variant.
+
+| Method | Description | Plan |
+|--------|-------------|------|
+| `StrategyFlowAnomalyAsync(symbol, expiry?)` | Directional options-flow anomaly score + matching short vertical | Growth+ |
+| `StrategyExpiryPositioningAsync(symbol, expiry?, minOpenInterest?, wingWidth?)` | OPEX pin-risk score + iron-fly proposal | Basic+ |
+| `StrategyZeroDteAsync(symbol, expiry?, minOpenInterest?, wingWidth?)` | 0DTE intraday structure proposal (iron fly / condor) | Growth+ (+0DTE) |
+| `StrategyDealerRegimeAsync(symbol, expiry?)` | Dealer-regime read (positive vs negative gamma) | Growth+ |
+| `StrategyVolCarryAsync(symbol, expiry?, …)` | Vol-carry harvesting candidate (short premium under positive carry) | Alpha+ |
+| `StrategyYieldEnhancementAsync(symbol, expiry?, …)` | Covered-call / cash-secured-put overlay proposal | Growth+ |
+| `StrategySurfaceAnomalyAsync(symbol, expiry?)` | Surface-anomaly / vol-arbitrage signal | Alpha+ |
+| `StrategySkewAsync(symbol, expiry?)` | Skew-trade signal (risk-reversal / put-skew richness) | Growth+ |
+| `StrategyTermStructureAsync(symbol)` | Term-structure signal (calendar / diagonal opportunity) | Growth+ |
+| `StrategyTailPricingAsync(symbol, expiry?)` | Tail-pricing signal (wing richness / cheap convexity) | Growth+ |
+
+### Earnings
+
+| Method | Description | Plan |
+|--------|-------------|------|
+| `EarningsCalendarAsync(days?, symbols?, importance?)` | Upcoming earnings calendar over a forward window | Growth+ |
+| `EarningsExpectedMoveAsync(symbol)` | Earnings-implied (straddle-derived) move for the next event | Growth+ |
+| `EarningsHistoryAsync(symbol, limit?)` | Historical earnings reactions (implied vs realized move, surprises) | Growth+ |
+| `EarningsIvCrushAsync(symbol)` | Estimated post-earnings IV crush (front-month deflation) | Growth+ |
+| `EarningsVrpAsync(symbol)` | Earnings variance risk premium with surprise reactions | Alpha+ |
+| `EarningsDealerPositioningAsync(symbol)` | Dealer positioning into the event (GEX buckets, top strikes, levels) | Alpha+ |
+| `EarningsStrategiesAsync(symbol)` | Earnings-aware strategy scores (straddle/strangle/iron-condor) | Alpha+ |
+| `EarningsScreenerAsync(sort?, limit?, days?, minImportance?)` | Cross-sectional earnings screener (VRP richest / cheapest move / highest crush / importance) | Alpha+ |
+
+### Structures (multi-leg, pure-math POST)
+
+| Method | Description | Plan |
+|--------|-------------|------|
+| `StructurePnlAsync(request)` | At-expiry P&L curve, breakevens, max profit/loss for a multi-leg structure | Basic+ |
+| `StructureGreeksAsync(request)` | Aggregated, quantity-scaled, direction-signed position Greeks | Basic+ |
+
+### Zero-DTE Flow (intraday)
+
+| Method | Description | Plan |
+|--------|-------------|------|
+| `FlowZeroDteSnapshotAsync(symbol)` | Live 0DTE flow snapshot (0DTE analytics + intraday flow direction) | Growth+ |
+| `FlowZeroDteSeriesAsync(symbol, bar?, minutes?)` | Intraday 0DTE flow time series (one bar per interval) | Growth+ |
+| `FlowZeroDteHedgeFlowAsync(symbol, side?, bar?, minutes?)` | Estimated dealer hedge-flow time series for today's 0DTE chain | Growth+ |
+| `FlowZeroDteHeatmapAsync(symbol, metric?, mode?, bar?, minutes?)` | Per-strike value matrix for a strike × time 0DTE heatmap | Alpha+ |
+| `FlowZeroDteStrikeFlowAsync(symbol, bar?, minutes?)` | Per-strike signed aggressor flow over today's 0DTE session | Alpha+ |
 
 ### Reference Data
 
@@ -156,6 +226,7 @@ Each method has a strongly-typed `*TypedAsync` variant (e.g. `FlowLevelsTypedAsy
 | `TickersAsync()` | All available stock tickers | Free |
 | `OptionsAsync(ticker)` | Option chain metadata (expirations and strikes) | Free |
 | `SymbolsAsync()` | Currently active symbols with live data | Free |
+| `ScreenerFieldsAsync()` | Catalogue of screener fields available for filters/sort/select/formulas | Free |
 
 ### Account and System
 

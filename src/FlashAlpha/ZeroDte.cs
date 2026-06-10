@@ -15,15 +15,15 @@ namespace FlashAlpha;
 /// flow on the day of expiry.</para>
 ///
 /// <para>This is a strongly-typed mirror of the JSON response. Use it via
-/// <see cref="FlashAlphaClient.ZeroDteTypedAsync(string, double?, System.Threading.CancellationToken)"/>.
-/// The original <see cref="FlashAlphaClient.ZeroDteAsync(string, double?, System.Threading.CancellationToken)"/>
+/// <see cref="FlashAlphaClient.ZeroDteTypedAsync(string, double?, string?, System.Threading.CancellationToken)"/>.
+/// The original <see cref="FlashAlphaClient.ZeroDteAsync(string, double?, string?, System.Threading.CancellationToken)"/>
 /// remains unchanged and continues to return <see cref="System.Text.Json.JsonElement"/>.</para>
 ///
 /// <para>On weekends/holidays or symbols with no 0DTE today, <see cref="NoZeroDte"/> is
 /// <c>true</c> and most fields are <c>null</c> — only <see cref="Symbol"/>, <see cref="AsOf"/>,
 /// <see cref="Message"/>, and <see cref="NextZeroDteExpiry"/> are populated.</para>
 /// </summary>
-public sealed class ZeroDteResponse
+public class ZeroDteResponse
 {
     /// <summary>Echoed from the request path (e.g. <c>"SPY"</c>, <c>"SPX"</c>, <c>"QQQ"</c>).</summary>
     [JsonPropertyName("symbol")]

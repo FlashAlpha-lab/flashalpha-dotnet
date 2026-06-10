@@ -306,6 +306,67 @@ public sealed class ClientTests
     }
 
     [Fact]
+    public async Task RealizedVolatilityAsync_CallsCorrectPath()
+    {
+        var (client, handler) = TestClientFactory.Create();
+        using (client) { await client.RealizedVolatilityAsync("AAPL"); }
+        Assert.Equal("/v1/volatility/realized/AAPL", handler.LastRequest!.RequestUri!.AbsolutePath);
+    }
+
+    [Fact]
+    public async Task RealizedVolatilityTypedAsync_ParsesEstimators()
+    {
+        var body = "{\"symbol\":\"AAPL\",\"underlying_price\":201.5,\"estimators\":{\"yang_zhang\":{\"rv10\":17.0,\"rv20\":19.7,\"rv30\":20.3}}}";
+        var (client, _) = TestClientFactory.Create(body: body);
+        using (client)
+        {
+            var result = await client.RealizedVolatilityTypedAsync("AAPL");
+            Assert.Equal("AAPL", result!.Symbol);
+            Assert.Equal(17.0, result.Estimators!.YangZhang!.Rv10);
+            Assert.Equal(20.3, result.Estimators.YangZhang.Rv30);
+        }
+    }
+
+    [Fact]
+    public async Task VolatilityForecastAsync_CallsCorrectPath()
+    {
+        var (client, handler) = TestClientFactory.Create();
+        using (client) { await client.VolatilityForecastAsync("AAPL"); }
+        Assert.Equal("/v1/volatility/forecast/AAPL", handler.LastRequest!.RequestUri!.AbsolutePath);
+    }
+
+    [Fact]
+    public async Task VolatilityForecastAsync_WithDist_SendsQueryParam()
+    {
+        var (client, handler) = TestClientFactory.Create();
+        using (client) { await client.VolatilityForecastAsync("AAPL", dist: "gaussian"); }
+        Assert.Contains("dist=gaussian", handler.LastRequest!.RequestUri!.Query);
+    }
+
+    [Fact]
+    public async Task VolatilityForecastAsync_OmitsDistWhenNull()
+    {
+        var (client, handler) = TestClientFactory.Create();
+        using (client) { await client.VolatilityForecastAsync("AAPL"); }
+        Assert.DoesNotContain("dist", handler.LastRequest!.RequestUri!.Query);
+    }
+
+    [Fact]
+    public async Task VolatilityForecastTypedAsync_ParsesGarch()
+    {
+        var body = "{\"symbol\":\"AAPL\",\"garch\":{\"model\":\"garch_1_1\",\"distribution\":\"student_t\",\"params\":{\"omega\":0.000003,\"alpha\":0.078,\"beta\":0.905,\"dof\":6.2},\"persistence\":0.983,\"converged\":true,\"forecast\":[{\"horizon_days\":1,\"vol_annualized\":20.1}]}}";
+        var (client, _) = TestClientFactory.Create(body: body);
+        using (client)
+        {
+            var result = await client.VolatilityForecastTypedAsync("AAPL");
+            Assert.Equal("garch_1_1", result!.Garch!.Model);
+            Assert.Equal(6.2, result.Garch.Params!.Dof);
+            Assert.True(result.Garch.Converged);
+            Assert.Equal(1, result.Garch.Forecast![0].HorizonDays);
+        }
+    }
+
+    [Fact]
     public async Task TickersAsync_CallsCorrectPath()
     {
         var (client, handler) = TestClientFactory.Create();
