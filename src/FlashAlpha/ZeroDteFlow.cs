@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
@@ -321,6 +322,51 @@ public sealed class ZeroDteFlowStrikeFlowBar
 
     [JsonPropertyName("contracts")]
     public long?[]? Contracts { get; set; }
+}
+
+// ── /v1/flow/zero-dte/leaderboard ────────────────────────────────────────────
+
+/// <summary>
+/// Typed response for <c>GET /v1/flow/zero-dte/leaderboard</c>.
+///
+/// <para>Cross-symbol 0DTE leaderboard: ranks the pre-warmed universe by a single
+/// metric (<c>heat</c> / <c>pin_risk</c> / <c>abs_flow</c> / <c>charm_intensity</c>)
+/// and returns the top <see cref="N"/> entries, highest-first. Requires the Alpha
+/// plan.</para>
+/// </summary>
+public sealed class ZeroDteFlowLeaderboardResponse
+{
+    /// <summary>Echoes the requested metric (<c>heat</c>/<c>pin_risk</c>/<c>abs_flow</c>/<c>charm_intensity</c>).</summary>
+    [JsonPropertyName("metric")]
+    public string? Metric { get; set; }
+
+    /// <summary>Echoes the requested entry count (clamped to [1, 100]).</summary>
+    [JsonPropertyName("n")]
+    public int? N { get; set; }
+
+    [JsonPropertyName("as_of")]
+    public DateTime? AsOf { get; set; }
+
+    [JsonPropertyName("market_open")]
+    public bool? MarketOpen { get; set; }
+
+    [JsonPropertyName("entries")]
+    public List<ZeroDteFlowLeaderboardEntry>? Entries { get; set; }
+}
+
+/// <summary>One ranked symbol inside <see cref="ZeroDteFlowLeaderboardResponse.Entries"/>.</summary>
+public sealed class ZeroDteFlowLeaderboardEntry
+{
+    /// <summary>1-based rank (highest metric value is rank 1).</summary>
+    [JsonPropertyName("rank")]
+    public int? Rank { get; set; }
+
+    [JsonPropertyName("symbol")]
+    public string? Symbol { get; set; }
+
+    /// <summary>The metric value this entry was ranked by.</summary>
+    [JsonPropertyName("value")]
+    public double? Value { get; set; }
 }
 
 /// <summary>Opaque placeholder element used for reserved/forward-compatible arrays.</summary>

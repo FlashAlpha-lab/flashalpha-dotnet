@@ -207,6 +207,43 @@ public sealed class ClientTests
     }
 
     [Fact]
+    public async Task FlowZeroDteSnapshotAsync_CallsCorrectPath()
+    {
+        var (client, handler) = TestClientFactory.Create();
+        using (client) { await client.FlowZeroDteSnapshotAsync("SPY"); }
+        Assert.Equal("/v1/flow/zero-dte/snapshot/SPY", handler.LastRequest!.RequestUri!.AbsolutePath);
+        // No expiry passed => no query string.
+        Assert.Equal(string.Empty, handler.LastRequest!.RequestUri!.Query);
+    }
+
+    [Fact]
+    public async Task FlowZeroDteSnapshotAsync_WithExpiry_SendsQueryParam()
+    {
+        var (client, handler) = TestClientFactory.Create();
+        using (client) { await client.FlowZeroDteSnapshotAsync("SPY", expiry: "2026-06-14"); }
+        Assert.Equal("/v1/flow/zero-dte/snapshot/SPY", handler.LastRequest!.RequestUri!.AbsolutePath);
+        Assert.Contains("expiry=2026-06-14", handler.LastRequest!.RequestUri!.Query);
+    }
+
+    [Fact]
+    public async Task FlowZeroDteLeaderboardAsync_CallsCorrectPath()
+    {
+        var (client, handler) = TestClientFactory.Create();
+        using (client) { await client.FlowZeroDteLeaderboardAsync(); }
+        Assert.Equal("/v1/flow/zero-dte/leaderboard", handler.LastRequest!.RequestUri!.AbsolutePath);
+    }
+
+    [Fact]
+    public async Task FlowZeroDteLeaderboardAsync_WithParams_SendsQueryParams()
+    {
+        var (client, handler) = TestClientFactory.Create();
+        using (client) { await client.FlowZeroDteLeaderboardAsync(metric: "pin_risk", n: 25); }
+        var query = handler.LastRequest!.RequestUri!.Query;
+        Assert.Contains("metric=pin_risk", query);
+        Assert.Contains("n=25", query);
+    }
+
+    [Fact]
     public async Task StockQuoteAsync_CallsCorrectPath()
     {
         var (client, handler) = TestClientFactory.Create();

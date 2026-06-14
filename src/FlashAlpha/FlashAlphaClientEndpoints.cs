@@ -314,13 +314,20 @@ public sealed partial class FlashAlphaClient
     // ── Zero-DTE Flow ─────────────────────────────────────────────────────────
 
     /// <summary>Live 0DTE flow snapshot (zero-dte analytics + intraday flow direction). Requires Growth+.</summary>
-    public Task<JsonElement> FlowZeroDteSnapshotAsync(string symbol, CancellationToken ct = default)
-        => GetAsync($"/v1/flow/zero-dte/snapshot/{Uri.EscapeDataString(symbol)}", null, ct);
+    /// <param name="symbol">Underlying symbol (e.g. <c>SPY</c>).</param>
+    /// <param name="expiry">Optional 0DTE expiry override (<c>yyyy-MM-dd</c>); today's 0DTE expiry when omitted.</param>
+    /// <param name="ct">Cancellation token.</param>
+    public Task<JsonElement> FlowZeroDteSnapshotAsync(string symbol, string? expiry = null, CancellationToken ct = default)
+    {
+        var p = new Dictionary<string, string?>();
+        if (expiry is not null) p["expiry"] = expiry;
+        return GetAsync($"/v1/flow/zero-dte/snapshot/{Uri.EscapeDataString(symbol)}", p.Count > 0 ? p : null, ct);
+    }
 
     /// <summary>Strongly-typed variant of <see cref="FlowZeroDteSnapshotAsync"/>.</summary>
-    public async Task<ZeroDteFlowSnapshotResponse?> FlowZeroDteSnapshotTypedAsync(string symbol, CancellationToken ct = default)
+    public async Task<ZeroDteFlowSnapshotResponse?> FlowZeroDteSnapshotTypedAsync(string symbol, string? expiry = null, CancellationToken ct = default)
     {
-        var e = await FlowZeroDteSnapshotAsync(symbol, ct).ConfigureAwait(false);
+        var e = await FlowZeroDteSnapshotAsync(symbol, expiry, ct).ConfigureAwait(false);
         return e.Deserialize<ZeroDteFlowSnapshotResponse>(PostSerializerOptions);
     }
 
@@ -408,6 +415,25 @@ public sealed partial class FlashAlphaClient
     {
         var e = await FlowZeroDteStrikeFlowAsync(symbol, bar, minutes, ct).ConfigureAwait(false);
         return e.Deserialize<ZeroDteFlowStrikeFlowResponse>(PostSerializerOptions);
+    }
+
+    /// <summary>Cross-symbol 0DTE leaderboard ranking the warm universe by a single metric. Requires the Alpha plan.</summary>
+    /// <param name="metric">Ranking metric: <c>heat</c> (default), <c>pin_risk</c>, <c>abs_flow</c>, or <c>charm_intensity</c>.</param>
+    /// <param name="n">Number of entries to return (clamped to [1, 100]).</param>
+    /// <param name="ct">Cancellation token.</param>
+    public Task<JsonElement> FlowZeroDteLeaderboardAsync(string? metric = null, int? n = null, CancellationToken ct = default)
+    {
+        var p = new Dictionary<string, string?>();
+        if (metric is not null) p["metric"] = metric;
+        if (n.HasValue) p["n"] = n.Value.ToString();
+        return GetAsync("/v1/flow/zero-dte/leaderboard", p.Count > 0 ? p : null, ct);
+    }
+
+    /// <summary>Strongly-typed variant of <see cref="FlowZeroDteLeaderboardAsync"/>.</summary>
+    public async Task<ZeroDteFlowLeaderboardResponse?> FlowZeroDteLeaderboardTypedAsync(string? metric = null, int? n = null, CancellationToken ct = default)
+    {
+        var e = await FlowZeroDteLeaderboardAsync(metric, n, ct).ConfigureAwait(false);
+        return e.Deserialize<ZeroDteFlowLeaderboardResponse>(PostSerializerOptions);
     }
 
     // ── Strategy Signals ──────────────────────────────────────────────────────

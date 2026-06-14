@@ -374,6 +374,25 @@ public sealed class IntegrationTestsExtended
             async () => Assert.NotNull(await client.FlowZeroDteStrikeFlowTypedAsync(Sym, minutes: 60)));
     }
 
+    [LiveFact]
+    public async Task FlowZeroDteSnapshot_SPY_WithExpiry_Deserializes()
+    {
+        using var client = CreateClient();
+        var today = DateTime.UtcNow.ToString("yyyy-MM-dd");
+        await ProbeAsync(
+            () => client.FlowZeroDteSnapshotAsync(Sym, expiry: today),
+            async () => Assert.NotNull(await client.FlowZeroDteSnapshotTypedAsync(Sym, expiry: today)));
+    }
+
+    [LiveFact]
+    public async Task FlowZeroDteLeaderboard_Deserializes()
+    {
+        using var client = CreateClient();
+        await ProbeAsync(
+            () => client.FlowZeroDteLeaderboardAsync(metric: "heat", n: 10),
+            async () => Assert.NotNull(await client.FlowZeroDteLeaderboardTypedAsync(metric: "heat", n: 10)));
+    }
+
     // ── Strategy signals (all ten share StrategyDecisionResponse) ─────────────
 
     [LiveFact]
