@@ -30,7 +30,7 @@ wrapper around the API plus typed response POCOs for the most-used endpoints.
 
 `FlashAlpha.Historical` (separate NuGet) is the point-in-time variant. Same
 endpoint shapes, same POCO field names — just pass an `at=` timestamp to
-replay any minute back to 2018-04-16.
+replay any minute back to 2017-01-03.
 
 ## Endpoints (selected highlights)
 
