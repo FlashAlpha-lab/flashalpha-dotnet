@@ -37,7 +37,7 @@ public sealed class DataAsOf
     [JsonPropertyName("equity_options_feed")]
     public string? EquityOptionsFeed { get; set; }
 
-    /// <summary>Index spot - SPX, NDX, RUT, VIX. Ticks in seconds during market hours.</summary>
+    /// <summary>Index spot - SPX, RUT, VIX and the other index roots. Ticks in seconds during market hours.</summary>
     [JsonPropertyName("index_feed")]
     public string? IndexFeed { get; set; }
 
