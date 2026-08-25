@@ -82,7 +82,7 @@ still bind.
 | `node` | Which node answered | Nodes hydrate independently |
 | `equity_feed` | Equity and ETF spot quotes | seconds, during market hours |
 | `equity_options_feed` | Equity and ETF option quotes | seconds, during market hours |
-| `index_feed` | Index spot (SPX, NDX, RUT, VIX) | seconds, during market hours |
+| `index_feed` | Index spot (SPX, RUT, VIX and the other index roots) | seconds, during market hours |
 | `index_options_feed` | Index option quotes | seconds, during market hours |
 | `futures_feed` | Futures prices | seconds, during the futures session |
 | `futures_options_feed` | Futures option quotes | seconds, during the futures session |
