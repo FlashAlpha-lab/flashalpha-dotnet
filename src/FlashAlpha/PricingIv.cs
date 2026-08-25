@@ -9,7 +9,7 @@ namespace FlashAlpha;
 /// finding. Returns <see cref="ImpliedVolatility"/> as a decimal (e.g. 0.18 =
 /// 18%) and <see cref="ImpliedVolatilityPct"/> as a percent (e.g. 18.0).</para>
 /// </summary>
-public sealed class PricingIvResponse
+public sealed class PricingIvResponse : FlashAlphaResponse
 {
     /// <summary>Echo of the request inputs.</summary>
     [JsonPropertyName("inputs")]

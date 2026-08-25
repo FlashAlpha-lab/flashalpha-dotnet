@@ -66,7 +66,7 @@ public sealed class StructurePnlRequest
 }
 
 /// <summary>Typed response for <c>POST /v1/structures/pnl</c>.</summary>
-public sealed class StructurePnlResponse
+public sealed class StructurePnlResponse : FlashAlphaResponse
 {
     /// <summary>Echo of the request legs.</summary>
     [JsonPropertyName("legs")]
@@ -124,7 +124,7 @@ public sealed class StructureGreeksRequest
 }
 
 /// <summary>Typed response for <c>POST /v1/structures/greeks</c>.</summary>
-public sealed class StructureGreeksResponse
+public sealed class StructureGreeksResponse : FlashAlphaResponse
 {
     [JsonPropertyName("spot")]
     public double? Spot { get; set; }

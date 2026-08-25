@@ -11,7 +11,7 @@ namespace FlashAlpha;
 /// and ATM IV. A lightweight subset of the full advanced-volatility payload for
 /// clients that reconstruct the surface themselves. Requires Alpha+.</para>
 /// </summary>
-public sealed class SurfaceSviResponse
+public sealed class SurfaceSviResponse : FlashAlphaResponse
 {
     [JsonPropertyName("symbol")]
     public string? Symbol { get; set; }

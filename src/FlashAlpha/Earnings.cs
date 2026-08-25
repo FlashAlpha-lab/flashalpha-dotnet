@@ -11,7 +11,7 @@ namespace FlashAlpha;
 /// <para>Upcoming earnings calendar over a forward window, optionally filtered to
 /// specific symbols and a minimum importance rating. Requires Growth+.</para>
 /// </summary>
-public sealed class EarningsCalendarResponse
+public sealed class EarningsCalendarResponse : FlashAlphaResponse
 {
     [JsonPropertyName("events")]
     public List<EarningsCalendarEvent>? Events { get; set; }
@@ -67,7 +67,7 @@ public sealed class EarningsCalendarEvent
 /// the front-expiry straddle into the earnings-jump component vs. baseline
 /// diffusion drift. Requires Growth+.</para>
 /// </summary>
-public sealed class EarningsExpectedMoveResponse
+public sealed class EarningsExpectedMoveResponse : FlashAlphaResponse
 {
     [JsonPropertyName("symbol")]
     public string? Symbol { get; set; }
@@ -122,7 +122,7 @@ public sealed class EarningsExpectedMoveBlock
 /// <para>Past earnings events with EPS/revenue actuals and surprises, implied
 /// vs. actual moves, and realized IV crush. Requires Growth+.</para>
 /// </summary>
-public sealed class EarningsHistoryResponse
+public sealed class EarningsHistoryResponse : FlashAlphaResponse
 {
     [JsonPropertyName("symbol")]
     public string? Symbol { get; set; }
@@ -185,7 +185,7 @@ public sealed class EarningsHistoryEvent
 /// <para>Expected IV crush for the next event plus the symbol's historical
 /// IV-crush distribution. Requires Growth+.</para>
 /// </summary>
-public sealed class EarningsIvCrushResponse
+public sealed class EarningsIvCrushResponse : FlashAlphaResponse
 {
     [JsonPropertyName("symbol")]
     public string? Symbol { get; set; }
@@ -249,7 +249,7 @@ public sealed class EarningsIvCrushDistribution
 /// symbol's realized history of actual moves, with a richness assessment and
 /// surprise-reaction breakdown. Requires Alpha+.</para>
 /// </summary>
-public sealed class EarningsVrpResponse
+public sealed class EarningsVrpResponse : FlashAlphaResponse
 {
     [JsonPropertyName("symbol")]
     public string? Symbol { get; set; }
@@ -328,7 +328,7 @@ public sealed class EarningsSurpriseReaction
 /// pre-event / event-week / post-event, charm acceleration into the event, and
 /// the top strikes by absolute net GEX. Requires Alpha+.</para>
 /// </summary>
-public sealed class EarningsDealerPositioningResponse
+public sealed class EarningsDealerPositioningResponse : FlashAlphaResponse
 {
     [JsonPropertyName("symbol")]
     public string? Symbol { get; set; }
@@ -420,7 +420,7 @@ public sealed class EarningsTopStrike
 /// earnings structures, blending implied move, VRP premium ratio, expected IV
 /// crush, ATM liquidity, and the gamma regime. Requires Alpha+.</para>
 /// </summary>
-public sealed class EarningsStrategiesResponse
+public sealed class EarningsStrategiesResponse : FlashAlphaResponse
 {
     [JsonPropertyName("symbol")]
     public string? Symbol { get; set; }
@@ -482,7 +482,7 @@ public sealed class EarningsStrategyContext
 /// ranked by VRP richness, cheapest implied move, highest historical crush, or
 /// importance. Requires Alpha+.</para>
 /// </summary>
-public sealed class EarningsScreenerResponse
+public sealed class EarningsScreenerResponse : FlashAlphaResponse
 {
     [JsonPropertyName("events")]
     public List<EarningsScreenerEvent>? Events { get; set; }

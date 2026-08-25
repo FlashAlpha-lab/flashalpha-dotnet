@@ -19,7 +19,7 @@ namespace FlashAlpha;
 ///
 /// <para>Returns 403 <c>tier_restricted</c> for Free-tier users.</para>
 /// </summary>
-public sealed class MaxPainResponse
+public sealed class MaxPainResponse : FlashAlphaResponse
 {
     [JsonPropertyName("symbol")]
     public string? Symbol { get; set; }

@@ -15,7 +15,7 @@ namespace FlashAlpha;
 /// lowercase <c>"buy"</c>/<c>"sell"</c>. Casing is consistent across
 /// summary and zero-DTE endpoints.</para>
 /// </summary>
-public sealed class ExposureSummaryResponse
+public sealed class ExposureSummaryResponse : FlashAlphaResponse
 {
     [JsonPropertyName("symbol")]
     public string? Symbol { get; set; }

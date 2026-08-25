@@ -23,7 +23,7 @@ namespace FlashAlpha;
 /// <c>true</c> and most fields are <c>null</c> — only <see cref="Symbol"/>, <see cref="AsOf"/>,
 /// <see cref="Message"/>, and <see cref="NextZeroDteExpiry"/> are populated.</para>
 /// </summary>
-public class ZeroDteResponse
+public class ZeroDteResponse : FlashAlphaResponse
 {
     /// <summary>Echoed from the request path (e.g. <c>"SPY"</c>, <c>"SPX"</c>, <c>"QQQ"</c>).</summary>
     [JsonPropertyName("symbol")]

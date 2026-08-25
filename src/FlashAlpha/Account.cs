@@ -13,7 +13,7 @@ namespace FlashAlpha;
 /// like <c>"1000"</c> — caller-side parsing required if you need an integer.
 /// <see cref="UsageToday"/> is a real integer.</para>
 /// </summary>
-public sealed class AccountResponse
+public sealed class AccountResponse : FlashAlphaResponse
 {
     /// <summary>Account user identifier (GUID string).</summary>
     [JsonPropertyName("user_id")]

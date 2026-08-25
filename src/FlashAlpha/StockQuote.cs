@@ -17,7 +17,7 @@ namespace FlashAlpha;
 /// <para>Historical stock quotes have a separate endpoint
 /// (<c>/historical/stockquote/{ticker}</c>) — this model is live-only.</para>
 /// </summary>
-public sealed class StockQuoteResponse
+public sealed class StockQuoteResponse : FlashAlphaResponse
 {
     [JsonPropertyName("ticker")]
     public string? Ticker { get; set; }

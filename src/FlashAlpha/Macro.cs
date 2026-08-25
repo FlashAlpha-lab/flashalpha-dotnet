@@ -11,7 +11,7 @@ namespace FlashAlpha;
 /// <para>"Overvixing / undervixing" regime label for the index complex —
 /// compares spot VIX against SPX 20-day realized vol. Requires Growth+.</para>
 /// </summary>
-public sealed class VixStateResponse
+public sealed class VixStateResponse : FlashAlphaResponse
 {
     [JsonPropertyName("as_of")]
     public string? AsOf { get; set; }
@@ -47,7 +47,7 @@ public sealed class VixStateResponse
 /// <para>Curated tier-1 / tier-2 symbol directory — the symbols the screener
 /// background loop keeps pre-warmed. Public — no auth required.</para>
 /// </summary>
-public sealed class UniverseResponse
+public sealed class UniverseResponse : FlashAlphaResponse
 {
     [JsonPropertyName("as_of")]
     public string? AsOf { get; set; }
@@ -94,7 +94,7 @@ public sealed class UniverseSymbol
 /// <c>filters</c>, <c>sort</c>, <c>select</c>, or formula expressions, with its
 /// value type. Requires an API key (any authenticated tier).</para>
 /// </summary>
-public sealed class ScreenerFieldsResponse
+public sealed class ScreenerFieldsResponse : FlashAlphaResponse
 {
     /// <summary>Fields returned sorted by <c>name</c>.</summary>
     [JsonPropertyName("fields")]

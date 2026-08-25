@@ -12,7 +12,7 @@ namespace FlashAlpha;
 /// <para><see cref="Iv"/> is indexed as <c>[tenor_idx][moneyness_idx]</c> —
 /// outer dimension matches <see cref="Tenors"/>, inner matches <see cref="Moneyness"/>.</para>
 /// </summary>
-public sealed class SurfaceResponse
+public sealed class SurfaceResponse : FlashAlphaResponse
 {
     [JsonPropertyName("symbol")]
     public string? Symbol { get; set; }

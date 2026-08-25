@@ -33,7 +33,7 @@ namespace FlashAlpha;
 ///     returns signed values.</item>
 /// </list></para>
 /// </summary>
-public sealed class StockSummaryResponse
+public sealed class StockSummaryResponse : FlashAlphaResponse
 {
     /// <summary>Echoed from the request path (e.g. <c>"SPY"</c>).</summary>
     [JsonPropertyName("symbol")]

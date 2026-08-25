@@ -10,7 +10,7 @@ namespace FlashAlpha;
 /// analytics with sub-100ms latency; on-demand symbols are computed at first
 /// request and cached for ~15 seconds.</para>
 /// </summary>
-public sealed class SymbolsResponse
+public sealed class SymbolsResponse : FlashAlphaResponse
 {
     /// <summary>Symbols with live data cached (e.g. <c>["SPY", "QQQ"]</c>).</summary>
     [JsonPropertyName("symbols")]

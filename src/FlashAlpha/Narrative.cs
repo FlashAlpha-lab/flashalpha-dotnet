@@ -19,7 +19,7 @@ namespace FlashAlpha;
 ///
 /// <para>Returns 403 <c>tier_restricted</c> below Growth plan.</para>
 /// </summary>
-public sealed class NarrativeResponse
+public sealed class NarrativeResponse : FlashAlphaResponse
 {
     [JsonPropertyName("symbol")]
     public string? Symbol { get; set; }
