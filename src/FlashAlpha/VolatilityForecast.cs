@@ -14,7 +14,7 @@ namespace FlashAlpha;
 /// Yang-Zhang. Each estimator exposes annualized realized vol (percent) for the
 /// three windows. Requires Alpha+.</para>
 /// </summary>
-public sealed class RealizedVolatilityResponse
+public sealed class RealizedVolatilityResponse : FlashAlphaResponse
 {
     [JsonPropertyName("symbol")]
     public string? Symbol { get; set; }
@@ -83,7 +83,7 @@ public sealed class RealizedVolWindows
 /// (daily/weekly/monthly components), and a GARCH(1,1) MLE fit with a multi-horizon
 /// forecast term structure. All vols are annualized percent. Requires Alpha+.</para>
 /// </summary>
-public sealed class VolatilityForecastResponse
+public sealed class VolatilityForecastResponse : FlashAlphaResponse
 {
     [JsonPropertyName("symbol")]
     public string? Symbol { get; set; }

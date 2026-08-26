@@ -9,7 +9,7 @@ namespace FlashAlpha;
 /// universe of symbols that <i>could</i> be queried — the live-cached subset
 /// is exposed via <see cref="SymbolsResponse"/> instead.</para>
 /// </summary>
-public sealed class TickersResponse
+public sealed class TickersResponse : FlashAlphaResponse
 {
     /// <summary>All available stock tickers (e.g. <c>["AAPL", "QQQ", "SPY", ...]</c>).</summary>
     [JsonPropertyName("tickers")]

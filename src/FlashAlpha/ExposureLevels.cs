@@ -12,7 +12,7 @@ namespace FlashAlpha;
 /// a chart, or feeding price-target context into an LLM) without the
 /// full GEX-by-strike payload.</para>
 /// </summary>
-public sealed class ExposureLevelsResponse
+public sealed class ExposureLevelsResponse : FlashAlphaResponse
 {
     [JsonPropertyName("symbol")]
     public string? Symbol { get; set; }

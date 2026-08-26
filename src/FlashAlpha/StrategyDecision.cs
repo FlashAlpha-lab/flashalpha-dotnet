@@ -16,7 +16,7 @@ namespace FlashAlpha;
 /// keys differ per strategy (documented per endpoint), but <c>underlying_price</c>
 /// is always present.</para>
 /// </summary>
-public sealed class StrategyDecisionResponse
+public sealed class StrategyDecisionResponse : FlashAlphaResponse
 {
     /// <summary>The strategy that produced the result (e.g. <c>flow_anomaly</c>, <c>vol_carry</c>).</summary>
     [JsonPropertyName("strategy")]

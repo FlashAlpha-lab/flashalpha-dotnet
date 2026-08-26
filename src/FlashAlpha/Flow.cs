@@ -23,7 +23,7 @@ namespace FlashAlpha;
 /// Gamma flip / call &amp; put walls / max pain recomputed against the live
 /// (intraday-flow-adjusted) book. Each level is <c>null</c> when it can't be
 /// located (e.g. no sign change in net gamma).</summary>
-public sealed class FlowLevelsResponse
+public sealed class FlowLevelsResponse : FlashAlphaResponse
 {
     /// <summary>Underlying ticker echoed from the request path.</summary>
     [JsonPropertyName("symbol")] public string Symbol { get; set; } = "";
@@ -58,7 +58,7 @@ public sealed class FlowPinRiskBreakdown
 
 /// <summary>Typed response for <c>GET /v1/flow/pin-risk/{symbol}</c> (Alpha+).
 /// A 0–100 composite pin-risk score plus the magnet strike and breakdown.</summary>
-public sealed class FlowPinRiskResponse
+public sealed class FlowPinRiskResponse : FlashAlphaResponse
 {
     /// <summary>Underlying ticker echoed from the request path.</summary>
     [JsonPropertyName("symbol")] public string Symbol { get; set; } = "";
@@ -82,7 +82,7 @@ public sealed class FlowPinRiskResponse
 
 /// <summary>Typed response for <c>GET /v1/flow/summary/{symbol}</c> (Alpha+).
 /// At-a-glance read on whether today's tape has shifted the dealer book.</summary>
-public sealed class FlowSummaryResponse
+public sealed class FlowSummaryResponse : FlashAlphaResponse
 {
     /// <summary>Underlying ticker echoed from the request path.</summary>
     [JsonPropertyName("symbol")] public string Symbol { get; set; } = "";
@@ -110,7 +110,7 @@ public sealed class FlowSummaryResponse
 /// <summary>Typed response for <c>GET /v1/flow/oi/{symbol}</c> (Alpha+).
 /// Settled (official) OI vs the intraday simulated OI. This endpoint does
 /// NOT return <c>underlying_price</c>.</summary>
-public sealed class FlowOiResponse
+public sealed class FlowOiResponse : FlashAlphaResponse
 {
     /// <summary>Underlying ticker echoed from the request path.</summary>
     [JsonPropertyName("symbol")] public string Symbol { get; set; } = "";
@@ -137,7 +137,7 @@ public sealed class FlowOiResponse
 /// <summary>Typed response for <c>GET /v1/flow/gex/{symbol}</c> (Alpha+).
 /// Live (flow-adjusted) GEX with the same per-strike shape as
 /// <see cref="GexResponse"/> (reuses <see cref="GexStrikeRow"/>).</summary>
-public sealed class FlowGexResponse
+public sealed class FlowGexResponse : FlashAlphaResponse
 {
     /// <summary>Underlying ticker echoed from the request path.</summary>
     [JsonPropertyName("symbol")] public string Symbol { get; set; } = "";
@@ -160,7 +160,7 @@ public sealed class FlowGexResponse
 /// <summary>Typed response for <c>GET /v1/flow/dex/{symbol}</c> (Alpha+).
 /// Live (flow-adjusted) DEX with the same per-strike shape as
 /// <see cref="DexResponse"/> (reuses <see cref="DexStrikeRow"/>).</summary>
-public sealed class FlowDexResponse
+public sealed class FlowDexResponse : FlashAlphaResponse
 {
     /// <summary>Underlying ticker echoed from the request path.</summary>
     [JsonPropertyName("symbol")] public string Symbol { get; set; } = "";
@@ -179,7 +179,7 @@ public sealed class FlowDexResponse
 /// <summary>Typed response for <c>GET /v1/flow/dealer-risk/{symbol}</c> (Alpha+).
 /// Side-by-side of the settled snapshot and the live flow-adjusted book,
 /// with the dollar adjustment and % shift today's tape produced.</summary>
-public sealed class FlowDealerRiskResponse
+public sealed class FlowDealerRiskResponse : FlashAlphaResponse
 {
     /// <summary>Underlying ticker echoed from the request path.</summary>
     [JsonPropertyName("symbol")] public string Symbol { get; set; } = "";
@@ -248,7 +248,7 @@ public sealed class FlowAdjustedDealerRisk
 /// <summary>Typed response for <c>GET /v1/flow/live/{symbol}</c> (Alpha+).
 /// Everything-at-once convenience bundle: OI simulator state + live exposure
 /// + live levels + pin risk + the nested dealer-risk block.</summary>
-public sealed class FlowLiveResponse
+public sealed class FlowLiveResponse : FlashAlphaResponse
 {
     /// <summary>Underlying ticker echoed from the request path.</summary>
     [JsonPropertyName("symbol")] public string Symbol { get; set; } = "";
@@ -322,7 +322,7 @@ public sealed class FlowOptionTrade
 /// <summary>Typed response for <c>GET /v1/flow/options/{symbol}/recent</c>
 /// (Alpha+). Newest-first option trade tape. <c>expiry</c> is echoed only
 /// when the filter is supplied.</summary>
-public sealed class FlowOptionRecentResponse
+public sealed class FlowOptionRecentResponse : FlashAlphaResponse
 {
     /// <summary>Underlying ticker echoed from the request path.</summary>
     [JsonPropertyName("symbol")] public string Symbol { get; set; } = "";
@@ -338,7 +338,7 @@ public sealed class FlowOptionRecentResponse
 
 /// <summary>Typed response for <c>GET /v1/flow/options/{symbol}/summary</c>
 /// (Alpha+). Per-underlying option-flow aggregates.</summary>
-public sealed class FlowOptionSummaryResponse
+public sealed class FlowOptionSummaryResponse : FlashAlphaResponse
 {
     /// <summary>Underlying ticker echoed from the request path.</summary>
     [JsonPropertyName("symbol")] public string Symbol { get; set; } = "";
@@ -383,7 +383,7 @@ public sealed class FlowOptionBlock
 
 /// <summary>Typed response for <c>GET /v1/flow/options/{symbol}/blocks</c>
 /// (Alpha+). All trades with <c>size &gt;= minSize</c>, newest-first.</summary>
-public sealed class FlowOptionBlocksResponse
+public sealed class FlowOptionBlocksResponse : FlashAlphaResponse
 {
     /// <summary>Underlying ticker echoed from the request path.</summary>
     [JsonPropertyName("symbol")] public string Symbol { get; set; } = "";
@@ -424,7 +424,7 @@ public sealed class FlowHistoryBucket
 
 /// <summary>Typed response for <c>GET /v1/flow/options/{symbol}/history</c>
 /// (Alpha+). Newest-first per-minute buckets.</summary>
-public sealed class FlowOptionHistoryResponse
+public sealed class FlowOptionHistoryResponse : FlashAlphaResponse
 {
     /// <summary>Underlying ticker echoed from the request path.</summary>
     [JsonPropertyName("symbol")] public string Symbol { get; set; } = "";
@@ -457,7 +457,7 @@ public sealed class FlowCumulativePoint
 
 /// <summary>Typed response for <c>GET /v1/flow/options/{symbol}/cumulative</c>
 /// (Alpha+).</summary>
-public sealed class FlowOptionCumulativeResponse
+public sealed class FlowOptionCumulativeResponse : FlashAlphaResponse
 {
     /// <summary>Underlying ticker echoed from the request path.</summary>
     [JsonPropertyName("symbol")] public string Symbol { get; set; } = "";
@@ -492,7 +492,7 @@ public sealed class FlowStockTrade
 
 /// <summary>Typed response for <c>GET /v1/flow/stocks/{symbol}/recent</c>
 /// (Alpha+). Newest-first stock trade tape.</summary>
-public sealed class FlowStockRecentResponse
+public sealed class FlowStockRecentResponse : FlashAlphaResponse
 {
     /// <summary>Underlying ticker echoed from the request path.</summary>
     [JsonPropertyName("symbol")] public string Symbol { get; set; } = "";
@@ -506,7 +506,7 @@ public sealed class FlowStockRecentResponse
 
 /// <summary>Typed response for <c>GET /v1/flow/stocks/{symbol}/summary</c>
 /// (Alpha+). Per-symbol stock-flow aggregates.</summary>
-public sealed class FlowStockSummaryResponse
+public sealed class FlowStockSummaryResponse : FlashAlphaResponse
 {
     /// <summary>Underlying ticker echoed from the request path.</summary>
     [JsonPropertyName("symbol")] public string Symbol { get; set; } = "";
@@ -545,7 +545,7 @@ public sealed class FlowStockBlock
 
 /// <summary>Typed response for <c>GET /v1/flow/stocks/{symbol}/blocks</c>
 /// (Alpha+). All trades with <c>size &gt;= minSize</c>, newest-first.</summary>
-public sealed class FlowStockBlocksResponse
+public sealed class FlowStockBlocksResponse : FlashAlphaResponse
 {
     /// <summary>Underlying ticker echoed from the request path.</summary>
     [JsonPropertyName("symbol")] public string Symbol { get; set; } = "";
@@ -589,7 +589,7 @@ public sealed class FlowStockHistoryBucket
 
 /// <summary>Typed response for <c>GET /v1/flow/stocks/{symbol}/history</c>
 /// (Alpha+). Newest-first per-minute buckets.</summary>
-public sealed class FlowStockHistoryResponse
+public sealed class FlowStockHistoryResponse : FlashAlphaResponse
 {
     /// <summary>Underlying ticker echoed from the request path.</summary>
     [JsonPropertyName("symbol")] public string Symbol { get; set; } = "";
@@ -603,7 +603,7 @@ public sealed class FlowStockHistoryResponse
 
 /// <summary>Typed response for <c>GET /v1/flow/stocks/{symbol}/cumulative</c>
 /// (Alpha+).</summary>
-public sealed class FlowStockCumulativeResponse
+public sealed class FlowStockCumulativeResponse : FlashAlphaResponse
 {
     /// <summary>Underlying ticker echoed from the request path.</summary>
     [JsonPropertyName("symbol")] public string Symbol { get; set; } = "";
@@ -639,7 +639,7 @@ public sealed class FlowOptionLeaderRow
 
 /// <summary>Typed response for <c>GET /v1/flow/options/leaderboard</c>
 /// (Alpha+). Top-N net-dollar buyers and sellers (cached ~30s).</summary>
-public sealed class FlowOptionLeaderboardResponse
+public sealed class FlowOptionLeaderboardResponse : FlashAlphaResponse
 {
     /// <summary>When the cached snapshot was generated (ISO-8601 UTC).</summary>
     [JsonPropertyName("generatedUtc")] public string GeneratedUtc { get; set; } = "";
@@ -693,7 +693,7 @@ public sealed class FlowOutlierRow
 
 /// <summary>Typed response for <c>GET /v1/flow/options/outliers</c>
 /// (Alpha+, cached ~30s).</summary>
-public sealed class FlowOptionOutliersResponse
+public sealed class FlowOptionOutliersResponse : FlashAlphaResponse
 {
     /// <summary>When the cached snapshot was generated (ISO-8601 UTC).</summary>
     [JsonPropertyName("generatedUtc")] public string GeneratedUtc { get; set; } = "";
@@ -733,7 +733,7 @@ public sealed class FlowStockLeaderRow
 
 /// <summary>Typed response for <c>GET /v1/flow/stocks/leaderboard</c>
 /// (Alpha+). Top-N net-dollar buyers and sellers (cached ~30s).</summary>
-public sealed class FlowStockLeaderboardResponse
+public sealed class FlowStockLeaderboardResponse : FlashAlphaResponse
 {
     /// <summary>When the cached snapshot was generated (ISO-8601 UTC).</summary>
     [JsonPropertyName("generatedUtc")] public string GeneratedUtc { get; set; } = "";
@@ -749,7 +749,7 @@ public sealed class FlowStockLeaderboardResponse
 
 /// <summary>Typed response for <c>GET /v1/flow/stocks/outliers</c>
 /// (Alpha+, cached ~30s).</summary>
-public sealed class FlowStockOutliersResponse
+public sealed class FlowStockOutliersResponse : FlashAlphaResponse
 {
     /// <summary>When the cached snapshot was generated (ISO-8601 UTC).</summary>
     [JsonPropertyName("generatedUtc")] public string GeneratedUtc { get; set; } = "";
@@ -894,7 +894,7 @@ public sealed class FlowSignal
 /// (Alpha+). Scored, classified unusual-flow feed — each notable print
 /// in the look-back window is coalesced into a signal, scored 0–100,
 /// and ranked highest score first.</summary>
-public sealed class FlowSignalsResponse
+public sealed class FlowSignalsResponse : FlashAlphaResponse
 {
     /// <summary>Underlying ticker echoed from the request path.</summary>
     [JsonPropertyName("symbol")] public string Symbol { get; set; } = "";
@@ -919,7 +919,7 @@ public sealed class FlowSignalsResponse
 /// classified premium across the window into bullish/bearish and
 /// opening/closing buckets — a cheap "smart-money tilt" read for one
 /// underlying.</summary>
-public sealed class FlowSignalsSummaryResponse
+public sealed class FlowSignalsSummaryResponse : FlashAlphaResponse
 {
     /// <summary>Underlying ticker echoed from the request path.</summary>
     [JsonPropertyName("symbol")] public string Symbol { get; set; } = "";

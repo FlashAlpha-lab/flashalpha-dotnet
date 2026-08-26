@@ -14,7 +14,7 @@ namespace FlashAlpha;
 /// wall), and OPEX / triple-witching flags when an expiration filter is
 /// supplied. Requires Growth+.</para>
 /// </summary>
-public sealed class ExposureSheetResponse
+public sealed class ExposureSheetResponse : FlashAlphaResponse
 {
     [JsonPropertyName("symbol")]
     public string? Symbol { get; set; }
@@ -163,7 +163,7 @@ public sealed class ExposureSheetStrike
 /// <para>Per-greek exposure aggregated by DTE bucket and also rolled up per
 /// expiry. Buckets: 0-7d / 8-30d / 31-60d / 61-180d / 180d+. Requires Growth+.</para>
 /// </summary>
-public sealed class ExposureTermStructureResponse
+public sealed class ExposureTermStructureResponse : FlashAlphaResponse
 {
     [JsonPropertyName("symbol")]
     public string? Symbol { get; set; }
@@ -247,7 +247,7 @@ public sealed class ExposureTermExpiry
 /// <para>Weighted cross-symbol aggregate of GEX / DEX / VEX / CHEX across up to
 /// 50 user-supplied symbols. Requires Growth+.</para>
 /// </summary>
-public sealed class ExposureBasketResponse
+public sealed class ExposureBasketResponse : FlashAlphaResponse
 {
     [JsonPropertyName("as_of")]
     public string? AsOf { get; set; }
@@ -326,7 +326,7 @@ public sealed class ExposureBasketConstituent
 /// <para>Day-over-day open-interest deltas. Per-contract deltas, top-N changes
 /// sorted by absolute magnitude, and call/put aggregate totals. Requires Growth+.</para>
 /// </summary>
-public sealed class ExposureOiDiffResponse
+public sealed class ExposureOiDiffResponse : FlashAlphaResponse
 {
     [JsonPropertyName("symbol")]
     public string? Symbol { get; set; }

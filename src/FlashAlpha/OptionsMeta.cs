@@ -10,7 +10,7 @@ namespace FlashAlpha;
 /// its full set of strikes. Useful for discovering valid (expiry, strike)
 /// pairs before calling the priced-quote endpoints.</para>
 /// </summary>
-public sealed class OptionsMetaResponse
+public sealed class OptionsMetaResponse : FlashAlphaResponse
 {
     /// <summary>Echoed underlying symbol (e.g. <c>"SPY"</c>).</summary>
     [JsonPropertyName("symbol")]

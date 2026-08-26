@@ -2,6 +2,34 @@
 
 All notable changes to the FlashAlpha .NET SDK are documented here.
 
+## 1.3.0 - 2026-08-25
+
+### Added
+- **`data_as_of` response envelope.** Every successful response now carries
+  `data_as_of`, reporting when each upstream feed last delivered to the node that
+  answered: equity and index spot, their option chains, futures and futures
+  options, the classified trade tape, settled open interest, and the macro series,
+  each reported separately because they arrive over different pipes and fail
+  independently. `endpoint_version` identifies the deployment that produced the
+  response.
+- **`DataAsOf`** model and a new `FlashAlphaResponse` base carrying
+  `EndpointVersion` and `DataAsOf`. All 83 response models now inherit it, so the
+  envelope is a typed member rather than a field the deserializer silently drops.
+  Both members are nullable, so responses predating the envelope still bind and
+  existing code compiles unchanged.
+
+### Notes
+- Read each feed against its own cadence rather than against `as_of`. Settled open
+  interest dated to the previous session's close is correct, since it is published
+  once per session; an options feed an hour behind during the regular session is
+  not.
+- A `null` means that node has not seen that feed, not that it is broken.
+- The field evidences that a feed delivered recently. It does not assert that every
+  contract in a chain is equally current.
+- Endpoints returning a bare JSON array carry the same information in the
+  `X-Data-As-Of` and `X-Endpoint-Version` response headers.
+
+
 ## 1.1.0 - 2026-06-08
 
 Large endpoint-parity release. Adds full coverage of the new FlashAlpha API

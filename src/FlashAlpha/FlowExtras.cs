@@ -13,7 +13,7 @@ namespace FlashAlpha;
 /// each side of the customer-flow tape weighted by VWAP per minute bucket.
 /// Requires Alpha+.</para>
 /// </summary>
-public sealed class FlowDealerPremiumResponse
+public sealed class FlowDealerPremiumResponse : FlashAlphaResponse
 {
     [JsonPropertyName("symbol")]
     public string? Symbol { get; set; }
@@ -57,7 +57,7 @@ public sealed class FlowDealerPremiumResponse
 /// <para>Multi-resolution OHLCV+flow bars derived from the live trade tape,
 /// returned oldest-first for chart consumers. Requires Alpha+.</para>
 /// </summary>
-public sealed class FlowStockBarsResponse
+public sealed class FlowStockBarsResponse : FlashAlphaResponse
 {
     [JsonPropertyName("symbol")]
     public string? Symbol { get; set; }

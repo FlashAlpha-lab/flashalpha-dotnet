@@ -13,7 +13,7 @@ namespace FlashAlpha;
 ///
 /// <para>Returns 403 <c>tier_restricted</c> for Free / Basic tier users.</para>
 /// </summary>
-public sealed class VolatilityResponse
+public sealed class VolatilityResponse : FlashAlphaResponse
 {
     /// <summary>Echoed from the request path (e.g. <c>"SPY"</c>).</summary>
     [JsonPropertyName("symbol")]

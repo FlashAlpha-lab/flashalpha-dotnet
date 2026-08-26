@@ -24,7 +24,7 @@ namespace FlashAlpha;
 /// remains available and returns a raw <see cref="JsonElement"/> for callers
 /// that need full JSON access.</para>
 /// </summary>
-public sealed class ScreenerResponse
+public sealed class ScreenerResponse : FlashAlphaResponse
 {
     /// <summary>Strongly-typed envelope metadata: counts, universe size, tier, as-of.</summary>
     [JsonPropertyName("meta")]

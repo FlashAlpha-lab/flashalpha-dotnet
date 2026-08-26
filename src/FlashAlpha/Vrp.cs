@@ -25,7 +25,7 @@ namespace FlashAlpha;
 ///
 /// <para>Returns 403 <c>tier_restricted</c> for anything below Alpha plan.</para>
 /// </summary>
-public sealed class VrpResponse
+public sealed class VrpResponse : FlashAlphaResponse
 {
     /// <summary>Echoed from the request path (e.g. <c>"SPY"</c>).</summary>
     [JsonPropertyName("symbol")]

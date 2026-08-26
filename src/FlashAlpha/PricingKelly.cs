@@ -13,7 +13,7 @@ namespace FlashAlpha;
 ///
 /// <para>Returns 403 <c>tier_restricted</c> for Free / Basic.</para>
 /// </summary>
-public sealed class PricingKellyResponse
+public sealed class PricingKellyResponse : FlashAlphaResponse
 {
     /// <summary>Echo of the request inputs.</summary>
     [JsonPropertyName("inputs")]

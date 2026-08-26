@@ -17,7 +17,7 @@ namespace FlashAlpha;
 /// on the inputs. Pass historical (spot, sigma) values to back-date the
 /// calc.</para>
 /// </summary>
-public sealed class PricingGreeksResponse
+public sealed class PricingGreeksResponse : FlashAlphaResponse
 {
     /// <summary>Echo of the input parameters (spot, strike, dte, sigma, type, risk_free_rate, dividend_yield).</summary>
     [JsonPropertyName("inputs")]

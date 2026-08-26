@@ -7,7 +7,7 @@ namespace FlashAlpha;
 ///
 /// <para>Liveness probe. Public endpoint, not rate-limited — safe to poll.</para>
 /// </summary>
-public sealed class HealthResponse
+public sealed class HealthResponse : FlashAlphaResponse
 {
     /// <summary>Health string. Typically <c>"Healthy"</c>.</summary>
     [JsonPropertyName("status")]

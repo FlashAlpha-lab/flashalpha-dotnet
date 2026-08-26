@@ -76,7 +76,7 @@ public sealed class ZeroDteFlowDirection
 /// over the session. Empty <see cref="Bars"/> when no samples in the window.
 /// Requires Growth+.</para>
 /// </summary>
-public sealed class ZeroDteFlowSeriesResponse
+public sealed class ZeroDteFlowSeriesResponse : FlashAlphaResponse
 {
     [JsonPropertyName("symbol")]
     public string? Symbol { get; set; }
@@ -161,7 +161,7 @@ public sealed class ZeroDteFlowSeriesBar
 /// per-bar increments and a running cumulative since session open, projectable
 /// to <c>all</c> / <c>calls</c> / <c>puts</c> via <c>side</c>. Requires Growth+.</para>
 /// </summary>
-public sealed class ZeroDteFlowHedgeFlowResponse
+public sealed class ZeroDteFlowHedgeFlowResponse : FlashAlphaResponse
 {
     [JsonPropertyName("symbol")]
     public string? Symbol { get; set; }
@@ -209,7 +209,7 @@ public sealed class ZeroDteFlowHedgeFlowBar
 /// bar's <see cref="ZeroDteFlowHeatmapBar.Values"/> array is parallel-by-index
 /// to it (column-major). Requires Alpha+.</para>
 /// </summary>
-public sealed class ZeroDteFlowHeatmapResponse
+public sealed class ZeroDteFlowHeatmapResponse : FlashAlphaResponse
 {
     [JsonPropertyName("symbol")]
     public string? Symbol { get; set; }
@@ -273,7 +273,7 @@ public sealed class ZeroDteFlowHeatmapBar
 /// count (per-bar increments). Three parallel arrays per bar, each index-aligned
 /// to <see cref="StrikesGrid"/>. Requires Alpha+.</para>
 /// </summary>
-public sealed class ZeroDteFlowStrikeFlowResponse
+public sealed class ZeroDteFlowStrikeFlowResponse : FlashAlphaResponse
 {
     [JsonPropertyName("symbol")]
     public string? Symbol { get; set; }
@@ -334,7 +334,7 @@ public sealed class ZeroDteFlowStrikeFlowBar
 /// and returns the top <see cref="N"/> entries, highest-first. Requires the Alpha
 /// plan.</para>
 /// </summary>
-public sealed class ZeroDteFlowLeaderboardResponse
+public sealed class ZeroDteFlowLeaderboardResponse : FlashAlphaResponse
 {
     /// <summary>Echoes the requested metric (<c>heat</c>/<c>pin_risk</c>/<c>abs_flow</c>/<c>charm_intensity</c>).</summary>
     [JsonPropertyName("metric")]

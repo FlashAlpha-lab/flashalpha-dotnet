@@ -12,7 +12,7 @@ namespace FlashAlpha;
 /// spread %, ATM OI depth, plus chain-level OI-weighted score and best/worst
 /// expiry. Requires Growth+.</para>
 /// </summary>
-public sealed class LiquidityResponse
+public sealed class LiquidityResponse : FlashAlphaResponse
 {
     [JsonPropertyName("symbol")]
     public string? Symbol { get; set; }
@@ -80,7 +80,7 @@ public sealed class LiquidityExpiry
 /// <c>skew_25d</c>, <c>risk_reversal_25d</c>, <c>butterfly_25d</c> — plus
 /// <c>tail_convexity</c>. Requires Growth+.</para>
 /// </summary>
-public sealed class SkewTermResponse
+public sealed class SkewTermResponse : FlashAlphaResponse
 {
     [JsonPropertyName("symbol")]
     public string? Symbol { get; set; }
@@ -145,7 +145,7 @@ public sealed class SkewTermExpiry
 /// <para>Daily Pearson correlation between spot log-returns and first-differences
 /// of ATM implied vol over 20-day and 60-day windows. Requires Growth+.</para>
 /// </summary>
-public sealed class SpotVolCorrelationResponse
+public sealed class SpotVolCorrelationResponse : FlashAlphaResponse
 {
     [JsonPropertyName("symbol")]
     public string? Symbol { get; set; }
@@ -181,7 +181,7 @@ public sealed class SpotVolCorrelationResponse
 /// <c>correlation_premium = implied − realized</c> and per-constituent
 /// contribution to basket vol. Requires Alpha+.</para>
 /// </summary>
-public sealed class DispersionResponse
+public sealed class DispersionResponse : FlashAlphaResponse
 {
     [JsonPropertyName("as_of")]
     public string? AsOf { get; set; }
@@ -249,7 +249,7 @@ public sealed class DispersionContributor
 /// volatility. Note: the top-level keys are snake_case but the items inside
 /// <see cref="ExpectedMoves"/> use camelCase. Requires Basic+.</para>
 /// </summary>
-public sealed class ExpectedMoveResponse
+public sealed class ExpectedMoveResponse : FlashAlphaResponse
 {
     [JsonPropertyName("symbol")]
     public string? Symbol { get; set; }
@@ -300,7 +300,7 @@ public sealed class ExpectedMoveItem
 ///
 /// <para>Daily VRP time series for charting and backtesting. Requires Alpha+.</para>
 /// </summary>
-public sealed class VrpHistoryResponse
+public sealed class VrpHistoryResponse : FlashAlphaResponse
 {
     [JsonPropertyName("symbol")]
     public string? Symbol { get; set; }
