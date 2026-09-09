@@ -35,6 +35,8 @@ public sealed class FlowLevelsResponse : FlashAlphaResponse
     [JsonPropertyName("expiry")] public string? Expiry { get; set; }
     /// <summary>Spot where live net dealer gamma crosses zero. Null if no flip.</summary>
     [JsonPropertyName("live_gamma_flip")] public double? LiveGammaFlip { get; set; }
+    /// <summary><c>"available"</c> when the flip above is published, otherwise a reason code (<c>"no_boundary"</c>, <c>"insufficient_local_coverage"</c>, ...) for why it was withheld — treat unrecognized values as "flip unavailable". Note the wire name is <c>gamma_flip_status</c>, NOT <c>live_gamma_flip_status</c>, even though the level it describes carries the <c>live_</c> prefix.</summary>
+    [JsonPropertyName("gamma_flip_status")] public string? GammaFlipStatus { get; set; }
     /// <summary>Strike of the largest live call-gamma concentration (upside magnet).</summary>
     [JsonPropertyName("live_call_wall")] public double? LiveCallWall { get; set; }
     /// <summary>Strike of the largest live put-gamma concentration (downside magnet).</summary>
@@ -153,6 +155,8 @@ public sealed class FlowGexResponse : FlashAlphaResponse
     [JsonPropertyName("live_net_gex_label")] public string LiveNetGexLabel { get; set; } = "";
     /// <summary>Live gamma-flip spot, or null if no sign change.</summary>
     [JsonPropertyName("live_gamma_flip")] public double? LiveGammaFlip { get; set; }
+    /// <summary><c>"available"</c> when the flip above is published, otherwise a reason code (<c>"no_boundary"</c>, <c>"insufficient_local_coverage"</c>, ...) for why it was withheld — treat unrecognized values as "flip unavailable". Note the wire name is <c>gamma_flip_status</c>, NOT <c>live_gamma_flip_status</c>, even though the level it describes carries the <c>live_</c> prefix.</summary>
+    [JsonPropertyName("gamma_flip_status")] public string? GammaFlipStatus { get; set; }
     /// <summary>Per-strike breakdown (identical schema to settled GEX).</summary>
     [JsonPropertyName("strikes")] public List<GexStrikeRow> Strikes { get; set; } = new();
 }
@@ -278,6 +282,8 @@ public sealed class FlowLiveResponse : FlashAlphaResponse
     [JsonPropertyName("live_gex_delta")] public double? LiveGexDelta { get; set; }
     /// <summary>Live gamma-flip spot, or null.</summary>
     [JsonPropertyName("live_gamma_flip")] public double? LiveGammaFlip { get; set; }
+    /// <summary><c>"available"</c> when the flip above is published, otherwise a reason code (<c>"no_boundary"</c>, <c>"insufficient_local_coverage"</c>, ...) for why it was withheld — treat unrecognized values as "flip unavailable". Note the wire name is <c>gamma_flip_status</c>, NOT <c>live_gamma_flip_status</c>, even though the level it describes carries the <c>live_</c> prefix.</summary>
+    [JsonPropertyName("gamma_flip_status")] public string? GammaFlipStatus { get; set; }
     /// <summary>Live call wall strike, or null.</summary>
     [JsonPropertyName("live_call_wall")] public double? LiveCallWall { get; set; }
     /// <summary>Live put wall strike, or null.</summary>
