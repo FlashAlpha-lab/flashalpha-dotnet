@@ -784,6 +784,8 @@ public sealed class FlowSignalsChain
     [JsonPropertyName("max_pain")] public double? MaxPain { get; set; }
     /// <summary>Settled gamma-flip strike (sign change of net GEX across the chain).</summary>
     [JsonPropertyName("gamma_flip")] public double? GammaFlip { get; set; }
+    /// <summary><c>"available"</c> when the flip is published, otherwise a reason code (<c>"no_boundary"</c>, <c>"insufficient_local_coverage"</c>, ...) for why it was withheld — treat unrecognized values as "flip unavailable".</summary>
+    [JsonPropertyName("gamma_flip_status")] public string? GammaFlipStatus { get; set; }
 }
 
 /// <summary>Component contributions that sum to the headline

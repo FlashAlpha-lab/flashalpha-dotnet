@@ -130,7 +130,14 @@ var raw = await client.ExposureSummaryAsync("SPY");
 var exposureSummary = System.Text.Json.JsonSerializer
     .Deserialize<ExposureSummaryResponse>(raw.GetRawText());
 Console.WriteLine($"Regime: {exposureSummary?.Regime}");
-Console.WriteLine($"Gamma flip: {exposureSummary?.GammaFlip}");
+
+// gamma_flip is nullable and is withheld on roughly two of three chains.
+// gamma_flip_status says why: "available", or a reason code such as
+// "no_boundary" / "insufficient_local_coverage". Always null-check the level;
+// treat an unrecognized status as "unavailable" (new codes get added).
+Console.WriteLine(exposureSummary?.GammaFlip is double flip
+    ? $"Gamma flip: {flip}"
+    : $"Gamma flip: unavailable ({exposureSummary?.GammaFlipStatus ?? "unknown"})");
 
 // 3) Max pain
 var maxPainRaw = await client.MaxPainAsync("SPY");
