@@ -934,4 +934,50 @@ public sealed class ClientTests
             Assert.Equal("ok", result.GetProperty("status").GetString());
         }
     }
+
+    // ── sell-window ──────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task SellWindowTypedAsync_BindsEveryField()
+    {
+        var (client, handler) = TestClientFactory.Create(body: """{"symbol":"SPY","session":"2026-10-16","spot":772.255,"quoted_at":"2026-10-16T13:35:00Z","legs_indicative":false,"windows":[{"expiry":"2026-10-16","days_to_expiry":0,"action":"sell","candidates":[{"structure":"short_put","exit":"expiry","legs":[{"side":"sell","quantity":1,"type":"put","strike":769,"delta":-0.19,"bid":0.39,"ask":0.4}],"mid_credit":0.395}]},{"expiry":"2026-10-23","days_to_expiry":7,"action":"skip"},{"expiry":"2026-10-30","days_to_expiry":14,"action":"skip"},{"action":"unavailable"}],"endpoint_version":"2026.09.30","data_as_of":{"node":"fa5"}}""");
+        using (client)
+        {
+            var r = await client.SellWindowTypedAsync("SPY");
+
+            Assert.Equal("/v1/strategies/sell-window/SPY", handler.LastRequest!.RequestUri!.AbsolutePath);
+            Assert.Equal("", handler.LastRequest.RequestUri.Query);
+            Assert.NotNull(r);
+            Assert.Equal("2026-10-16", r!.Session);
+            Assert.Equal(772.255, r.Spot);
+            Assert.Equal("2026-10-16T13:35:00Z", r.QuotedAt);
+            Assert.False(r.LegsIndicative);
+            Assert.Equal(4, r.Windows!.Count);
+            Assert.Equal("sell", r.Windows[0].Action);
+            Assert.Equal(0, r.Windows[0].DaysToExpiry);
+            var trade = r.Windows[0].Candidates![0];
+            Assert.Equal("short_put", trade.Structure);
+            Assert.Equal("expiry", trade.Exit);
+            Assert.Equal(0.395, trade.MidCredit);
+            Assert.Equal(769, trade.Legs![0].Strike);
+            Assert.Equal(-0.19, trade.Legs[0].Delta);
+            Assert.Equal("put", trade.Legs[0].Type);
+            Assert.Null(r.Windows[3].Expiry);
+            Assert.Equal("2026.09.30", r.EndpointVersion);
+            Assert.Equal("fa5", r.DataAsOf!.Node);
+        }
+    }
+
+    [Fact]
+    public async Task SellWindowTypedAsync_SkipDayLeavesOptionalFieldsNull()
+    {
+        var (client, _) = TestClientFactory.Create(body: """{"symbol":"SPY","session":"2026-11-05","windows":[{"expiry":"2026-11-05","days_to_expiry":0,"action":"skip"}]}""");
+        using (client)
+        {
+            var r = await client.SellWindowTypedAsync("SPY");
+            Assert.Null(r!.Spot);
+            Assert.Null(r.LegsIndicative);
+            Assert.Null(r.Windows![0].Candidates);
+        }
+    }
 }
