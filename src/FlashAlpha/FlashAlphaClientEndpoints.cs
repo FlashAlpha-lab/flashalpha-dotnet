@@ -572,6 +572,23 @@ public sealed partial class FlashAlphaClient
     public async Task<StrategyDecisionResponse?> StrategyTailPricingTypedAsync(string symbol, string? expiry = null, CancellationToken ct = default)
         => (await StrategyTailPricingAsync(symbol, expiry, ct).ConfigureAwait(false)).Deserialize<StrategyDecisionResponse>(PostSerializerOptions);
 
+    // ── sell-window (own response shape) ──────────────────────────────────────
+
+    /// <summary>
+    /// Should you sell options today? One answer per session for SPY, QQQ and IWM, built from more
+    /// than 5 million backtests. For four listed expiries (same day, then the expiries closest to one
+    /// week, two weeks and one month out) each window says <c>sell</c>, <c>skip</c> or
+    /// <c>unavailable</c>. On a sell it lists the trades to place, with strikes, quotes and the exit
+    /// rule. Any other symbol returns every window as <c>unavailable</c>. Requires Basic+ through
+    /// November 2026, Growth+ from December 1, 2026.
+    /// </summary>
+    public Task<JsonElement> SellWindowAsync(string symbol, CancellationToken ct = default)
+        => GetAsync($"/v1/strategies/sell-window/{Uri.EscapeDataString(symbol)}", null, ct);
+
+    /// <summary>Strongly-typed variant of <see cref="SellWindowAsync"/>.</summary>
+    public async Task<SellWindowResponse?> SellWindowTypedAsync(string symbol, CancellationToken ct = default)
+        => (await SellWindowAsync(symbol, ct).ConfigureAwait(false)).Deserialize<SellWindowResponse>(PostSerializerOptions);
+
     // ── Earnings ──────────────────────────────────────────────────────────────
 
     /// <summary>Upcoming earnings calendar over a forward window. Requires Growth+.</summary>

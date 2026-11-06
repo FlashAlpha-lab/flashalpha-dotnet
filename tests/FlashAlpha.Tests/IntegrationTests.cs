@@ -2109,4 +2109,15 @@ public sealed class IntegrationTests
         Assert.NotNull(typed);
         Assert.Equal(FlowSym, typed!.Symbol);
     }
+
+    [LiveFact]
+    public async Task SellWindow_ReturnsFourWindows()
+    {
+        using var client = CreateClient();
+        var r = await client.SellWindowTypedAsync("SPY");
+        Assert.Equal("SPY", r!.Symbol);
+        Assert.NotNull(r.Session);
+        Assert.Equal(4, r.Windows!.Count);
+        Assert.NotNull(r.Windows[0].Action);
+    }
 }
