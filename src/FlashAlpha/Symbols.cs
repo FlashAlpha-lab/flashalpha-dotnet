@@ -8,7 +8,7 @@ namespace FlashAlpha;
 /// <para>The list of symbols that have been recently queried and currently have
 /// live data cached at the FlashAlpha gateway. Pre-cached symbols return
 /// analytics with sub-100ms latency; on-demand symbols are computed at first
-/// request and cached for ~15 seconds.</para>
+/// request.</para>
 /// </summary>
 public sealed class SymbolsResponse : FlashAlphaResponse
 {
