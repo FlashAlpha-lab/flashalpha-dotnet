@@ -644,10 +644,10 @@ public sealed class FlowOptionLeaderRow
 }
 
 /// <summary>Typed response for <c>GET /v1/flow/options/leaderboard</c>
-/// (Alpha+). Top-N net-dollar buyers and sellers (cached ~30s).</summary>
+/// (Alpha+). Top-N net-dollar buyers and sellers (refreshes about every 30s).</summary>
 public sealed class FlowOptionLeaderboardResponse : FlashAlphaResponse
 {
-    /// <summary>When the cached snapshot was generated (ISO-8601 UTC).</summary>
+    /// <summary>When the snapshot was generated (ISO-8601 UTC).</summary>
     [JsonPropertyName("generatedUtc")] public string GeneratedUtc { get; set; } = "";
     /// <summary>Number of ranked rows requested per side.</summary>
     [JsonPropertyName("n")] public int? N { get; set; }
@@ -698,10 +698,10 @@ public sealed class FlowOutlierRow
 }
 
 /// <summary>Typed response for <c>GET /v1/flow/options/outliers</c>
-/// (Alpha+, cached ~30s).</summary>
+/// (Alpha+, refreshes about every 30s).</summary>
 public sealed class FlowOptionOutliersResponse : FlashAlphaResponse
 {
-    /// <summary>When the cached snapshot was generated (ISO-8601 UTC).</summary>
+    /// <summary>When the snapshot was generated (ISO-8601 UTC).</summary>
     [JsonPropertyName("generatedUtc")] public string GeneratedUtc { get; set; } = "";
     /// <summary>Aggregation window in minutes.</summary>
     [JsonPropertyName("windowMinutes")] public int? WindowMinutes { get; set; }
@@ -738,10 +738,10 @@ public sealed class FlowStockLeaderRow
 }
 
 /// <summary>Typed response for <c>GET /v1/flow/stocks/leaderboard</c>
-/// (Alpha+). Top-N net-dollar buyers and sellers (cached ~30s).</summary>
+/// (Alpha+). Top-N net-dollar buyers and sellers (refreshes about every 30s).</summary>
 public sealed class FlowStockLeaderboardResponse : FlashAlphaResponse
 {
-    /// <summary>When the cached snapshot was generated (ISO-8601 UTC).</summary>
+    /// <summary>When the snapshot was generated (ISO-8601 UTC).</summary>
     [JsonPropertyName("generatedUtc")] public string GeneratedUtc { get; set; } = "";
     /// <summary>Number of ranked rows requested per side.</summary>
     [JsonPropertyName("n")] public int? N { get; set; }
@@ -754,10 +754,10 @@ public sealed class FlowStockLeaderboardResponse : FlashAlphaResponse
 }
 
 /// <summary>Typed response for <c>GET /v1/flow/stocks/outliers</c>
-/// (Alpha+, cached ~30s).</summary>
+/// (Alpha+, refreshes about every 30s).</summary>
 public sealed class FlowStockOutliersResponse : FlashAlphaResponse
 {
-    /// <summary>When the cached snapshot was generated (ISO-8601 UTC).</summary>
+    /// <summary>When the snapshot was generated (ISO-8601 UTC).</summary>
     [JsonPropertyName("generatedUtc")] public string GeneratedUtc { get; set; } = "";
     /// <summary>Aggregation window in minutes.</summary>
     [JsonPropertyName("windowMinutes")] public int? WindowMinutes { get; set; }
