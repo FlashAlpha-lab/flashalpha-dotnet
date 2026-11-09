@@ -16,8 +16,8 @@ namespace FlashAlpha;
 /// right now?".</para>
 ///
 /// <para><b>Dual-mode endpoint:</b> authenticated requests return LIVE data;
-/// unauthenticated requests return the previous-day cached snapshot
-/// (populated daily at market open). Use <see cref="MarketOpen"/> and
+/// unauthenticated requests return the previous trading session's
+/// snapshot. Use <see cref="MarketOpen"/> and
 /// <see cref="AsOf"/> to disambiguate at the call site.</para>
 ///
 /// <para><b>Null-safety hot spots:</b>
