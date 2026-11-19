@@ -2120,4 +2120,44 @@ public sealed class IntegrationTests
         Assert.Equal(4, r.Windows!.Count);
         Assert.NotNull(r.Windows[0].Action);
     }
+
+    [LiveFact]
+    public async Task ExpiryImpact_ReturnsTypedImpact()
+    {
+        using var client = CreateClient();
+        var r = await client.ExpiryImpactTypedAsync("SPY", limit: 3);
+        Assert.Equal("SPY", r!.Symbol);
+        Assert.Equal("expiry_removal_sensitivity", r.AnalysisType);
+        Assert.Contains(r.SelectedExpiry!, r.AvailableExpiries!);
+        Assert.NotNull(r.Current!.GrossGexUsd);
+        Assert.NotNull(r.ExcludingExpiry!.Status);
+        Assert.InRange(r.Impact!.LargestGrossReductions!.Count, 1, 3);
+        Assert.NotNull(r.Impact.LargestGrossReductions[0].Strike);
+        Assert.NotEmpty(r.Strikes!);
+        Assert.NotNull(r.Facts![0].SupportingValues);
+        Assert.NotNull(r.DataAsOf!.Node);
+    }
+
+    [LiveFact]
+    public async Task StrikeDependency_AttributesAListedStrike()
+    {
+        using var client = CreateClient();
+        var impact = await client.ExpiryImpactTypedAsync("SPY");
+        var strike = impact!.Strikes!.OrderByDescending(s => s.CurrentGrossGexUsd).First().Strike!.Value;
+        var r = await client.StrikeDependencyTypedAsync("SPY", strike);
+        Assert.Equal("strike_attribution", r!.AnalysisType);
+        Assert.Equal(strike, r.Strike);
+        Assert.NotEmpty(r.ByExpiry!);
+        Assert.NotNull(r.ByExpiry![0].ValuationCutoffAt);
+        Assert.NotNull(r.DominantExpiry);
+        Assert.NotNull(r.DataAsOf!.Node);
+    }
+
+    [LiveFact]
+    public async Task ExpiryImpact_UnsupportedSymbolSurfaces422()
+    {
+        using var client = CreateClient();
+        var ex = await Assert.ThrowsAsync<FlashAlphaException>(() => client.ExpiryImpactAsync("AAPL"));
+        Assert.Equal(422, ex.StatusCode);
+    }
 }

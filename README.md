@@ -204,8 +204,40 @@ All methods return `Task<JsonElement>` and accept an optional `CancellationToken
 | `MaxPainAsync(symbol, expiration?)` | Max pain analysis with dealer alignment, pain curve, pin probability | Basic+ |
 | `ExposureSheetAsync(symbol, expiration?, minOi?)` | Per-strike GEX/DEX/VEX/CHEX dealer exposure sheet with totals, levels, peaks | Growth+ |
 | `ExposureTermStructureAsync(symbol)` | Net GEX/DEX/VEX/CHEX broken out by expiry bucket (term structure of exposure) | Growth+ |
+| `ExpiryImpactAsync(symbol, expiry?, limit?)` / `ExpiryImpactTypedAsync(symbol, expiry?, limit?)` | Gamma concentration with one expiry excluded (SPY, QQQ) | Growth+ |
+| `StrikeDependencyAsync(symbol, strike)` / `StrikeDependencyTypedAsync(symbol, strike)` | One exact strike's gamma attributed to its expiries (SPY, QQQ) | Growth+ |
 | `ExposureBasketAsync(symbols, weights?)` | Weighted cross-symbol exposure aggregate (up to 50 symbols) | Growth+ |
 | `ExposureOiDiffAsync(symbol, topN?)` | Largest open-interest changes since the prior snapshot | Growth+ |
+
+### Expiry impact and strike dependency (SPY, QQQ)
+
+Two Growth+ views of how much of the current gamma concentration rests on one expiry.
+
+- **Expiry impact** compares the current SPY or QQQ gamma distribution with the same
+  captured inputs after excluding one expiry. Spot, Greeks and open interest are held
+  fixed, so it measures how much of today's concentration depends on one maturity. It is
+  not a forecast of post-expiry prices, dealer hedging or the next session's chain.
+- **Strike dependency** attributes the gamma at one exact observed strike to its
+  expiries, and names the dominant expiry. It reports concentration at that strike, not
+  a support/resistance probability.
+
+```csharp
+using FlashAlpha;
+
+using var client = new FlashAlphaClient("YOUR_API_KEY");
+
+ExpiryImpactResponse? impact = await client.ExpiryImpactTypedAsync("SPY", limit: 5);
+Console.WriteLine(impact!.Impact!.RemovedGrossSharePct); // % of gross GEX in the excluded expiry
+Console.WriteLine(impact.Impact.NetSignChanged);         // did the net sign flip without it?
+
+StrikeDependencyResponse? level = await client.StrikeDependencyTypedAsync("SPY", 670);
+Console.WriteLine(level!.DominantExpiry);                // yyyy-MM-dd
+Console.WriteLine(level.DominantExpirySharePct);
+```
+
+`data_status` is `partial` in normal operation (the open-interest vintage is unknown),
+`stale` when an input predates the market-session freshness cutoff, and `unavailable`
+when no contract qualifies. `reasons` carries machine codes.
 
 ### Flow (live, simulation-aware) — Growth+ (raw tape, unusual-flow signals, OI simulator state & the full live bundle are Alpha)
 

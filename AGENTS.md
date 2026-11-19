@@ -191,6 +191,8 @@ Console.WriteLine($"Max pain: {maxPain?.MaxPainStrike}, signal: {maxPain?.Signal
 | `StructurePnlResponse` / `StructureGreeksResponse` | `POST /v1/structures/{pnl,greeks}` | Multi-leg at-expiry P&L curve / aggregated position Greeks (pure math) |
 | `ZeroDteFlowSnapshotResponse` (+ series/hedge-flow/heatmap/strike-flow) | `/v1/flow/zero-dte/*` | Intraday 0DTE flow; snapshot derives from `ZeroDteResponse` |
 | `ExposureSheetResponse` / `ExposureTermStructureResponse` / `ExposureBasketResponse` / `ExposureOiDiffResponse` | `/v1/exposure/*` | Extended dealer-exposure analytics |
+| `ExpiryImpactResponse` | `/v1/exposure/expiry-impact/{symbol}` | SPY or QQQ gamma distribution compared with the same captured inputs after excluding one expiry (Growth+) |
+| `StrikeDependencyResponse` | `/v1/exposure/strike-dependency/{symbol}` | The gamma at one exact observed SPY or QQQ strike attributed to its expiries (Growth+) |
 | `SkewTermResponse` / `SpotVolCorrelationResponse` / `DispersionResponse` / `LiquidityResponse` / `ExpectedMoveResponse` / `VrpHistoryResponse` / `SurfaceSviResponse` | volatility / surface | Skew-term, spot-vol correlation, dispersion, liquidity, expected move, VRP history, SVI params |
 | `VixStateResponse` / `UniverseResponse` | `/v1/macro/vix-state`, `/v1/universe` | Macro regime + curated symbol universe |
 
