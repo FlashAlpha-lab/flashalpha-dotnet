@@ -980,4 +980,252 @@ public sealed class ClientTests
             Assert.Null(r.Windows![0].Candidates);
         }
     }
+
+    // ── expiry impact and strike dependency ──────────────────────────────────
+
+    /// <summary>Real production responses captured 2026-11-19 (lists trimmed).</summary>
+    private static string Fixture(string name)
+        => System.IO.File.ReadAllText(System.IO.Path.Combine(AppContext.BaseDirectory, "Fixtures", name));
+
+    [Fact]
+    public async Task ExpiryImpactAsync_OmitsUnsetOptionalParameters()
+    {
+        var (client, handler) = TestClientFactory.Create(body: Fixture("expiry_impact_live.json"));
+        using (client)
+        {
+            await client.ExpiryImpactAsync("SPY");
+            Assert.Equal("/v1/exposure/expiry-impact/SPY", handler.LastRequest!.RequestUri!.AbsolutePath);
+            Assert.Equal("", handler.LastRequest.RequestUri.Query);
+        }
+    }
+
+    [Fact]
+    public async Task ExpiryImpactAsync_SendsExpiryAndLimit()
+    {
+        var (client, handler) = TestClientFactory.Create(body: Fixture("expiry_impact_live.json"));
+        using (client)
+        {
+            await client.ExpiryImpactAsync("QQQ", expiry: "2026-11-20", limit: 3);
+            Assert.Equal("/v1/exposure/expiry-impact/QQQ", handler.LastRequest!.RequestUri!.AbsolutePath);
+            Assert.Equal("?expiry=2026-11-20&limit=3", handler.LastRequest.RequestUri.Query);
+
+            await client.ExpiryImpactAsync("SPY", limit: 20);
+            Assert.Equal("?limit=20", handler.LastRequest!.RequestUri!.Query);
+        }
+    }
+
+    [Fact]
+    public async Task ExpiryImpactTypedAsync_BindsEveryLevel()
+    {
+        var (client, _) = TestClientFactory.Create(body: Fixture("expiry_impact_live.json"));
+        using (client)
+        {
+            var r = await client.ExpiryImpactTypedAsync("SPY", limit: 2);
+
+            Assert.NotNull(r);
+            // shared metadata
+            Assert.Equal("SPY", r!.Symbol);
+            Assert.Equal(735.885, r.UnderlyingPrice);
+            Assert.Equal("6be03e34b24a50979b50d4bd7fb9f700d4c20fe50aecbd0fc54132c60b8e0518", r.SnapshotId);
+            Assert.Equal("2026-11-19T08:11:09.2307609Z", r.GeneratedAt);
+            Assert.Equal("2026-11-19T01:00:00.26Z", r.QuoteAt);
+            Assert.Equal("2026-11-18T14:30:38Z", r.GreeksOldestAt);
+            Assert.Equal("2026-11-18T21:15:02Z", r.GreeksNewestAt);
+            Assert.Equal("gamma-context-v2", r.CalculationVersion);
+            Assert.Equal("captured_cached_gamma_current_spot", r.PricingBasis);
+            Assert.Equal("stale", r.DataStatus);
+            Assert.Equal(4, r.Reasons!.Count);
+            Assert.Equal("expiry_clock_unverified", r.Reasons[0].Code);
+            Assert.Equal(600, r.Reasons[0].ContractCount);
+            Assert.Null(r.Reasons[2].ContractCount);
+            Assert.Null(r.OiAsOf);
+            Assert.Equal("unknown", r.OiVintageStatus);
+            Assert.Equal(9891, r.EligibleContractCount);
+            Assert.Equal(2099, r.RejectedContractCount);
+            Assert.Equal(50, r.ObservedMinStrike);
+            Assert.Equal(1480, r.ObservedMaxStrike);
+            Assert.Equal("usd_delta_notional_per_1pct_move", r.GexUnit);
+            Assert.Equal("calls_positive_puts_negative", r.SignConvention);
+            Assert.Equal("expiry_removal_sensitivity", r.AnalysisType);
+            // selection
+            Assert.Equal("2026-11-19", r.SelectedExpiry);
+            Assert.Equal("nearest_active", r.SelectionSource);
+            Assert.Equal(new[] { "2026-11-19", "2026-11-20", "2026-11-23" }, r.AvailableExpiries);
+            // totals
+            Assert.Equal(33170572651.203655, r.Current!.GrossGexUsd);
+            Assert.Equal(9891, r.Current.ContractCount);
+            Assert.Null(r.Current.Status);
+            Assert.Equal(153, r.ExcludedExpiry!.ContractCount);
+            Assert.Equal(-573935208.9391723, r.ExcludedExpiry.PutGexUsd);
+            Assert.Equal("available", r.ExcludingExpiry!.Status);
+            Assert.Equal(9738, r.ExcludingExpiry.ContractCount);
+            // impact
+            Assert.Equal(4.374061987278384, r.Impact!.RemovedGrossSharePct);
+            Assert.Equal(95.6259380127216, r.Impact.RetainedGrossSharePct);
+            Assert.Equal(-303030991.4205142, r.Impact.NetGexChangeUsd);
+            Assert.Equal("negative", r.Impact.NetSignBefore);
+            Assert.Equal("negative", r.Impact.NetSignAfter);
+            Assert.False(r.Impact.NetSignChanged);
+            Assert.Equal(740, r.Impact.LargestGrossReductions![0].Strike);
+            Assert.Equal(9.24725841038217, r.Impact.LargestGrossReductions[0].ExcludedShareAtStrikePct);
+            Assert.Equal(750, r.Impact.StrongestRemainingConcentrations![0].Strike);
+            Assert.Equal(1697218423.3419309, r.Impact.StrongestRemainingConcentrations[0].RemainingGrossGexUsd);
+            // per strike (integer JSON numbers bind to doubles)
+            Assert.Equal(3, r.Strikes!.Count);
+            Assert.Equal(50, r.Strikes[0].Strike);
+            Assert.Equal(-93.20546009226986, r.Strikes[0].DistanceFromSpotPct);
+            Assert.Equal(0, r.Strikes[0].ExcludedGrossGexUsd);
+            Assert.Equal(7688.633337283193, r.Strikes[0].CurrentGrossGexUsd);
+            // facts: supporting_values is a free-form map
+            Assert.Equal("expiry_gross_share", r.Facts![0].Code);
+            Assert.StartsWith("The selected expiry contributes 4.4%", r.Facts[0].Text);
+            Assert.Equal("2026-11-19", r.Facts[0].SupportingValues!["expiry"].GetString());
+            Assert.Equal(4.374061987278384, r.Facts[0].SupportingValues!["gross_share_pct"].GetDouble());
+            Assert.Equal(9738, r.Facts[1].SupportingValues!["remaining_contract_count"].GetInt32());
+            // envelope
+            Assert.Equal("2026.09.30", r.EndpointVersion);
+            Assert.Equal("fa4", r.DataAsOf!.Node);
+            Assert.Equal("2026-11-18T00:00:00Z", r.DataAsOf.OiFeed);
+        }
+    }
+
+    [Fact]
+    public async Task StrikeDependencyAsync_SendsFractionalStrikeExactly()
+    {
+        var (client, handler) = TestClientFactory.Create(body: Fixture("strike_dependency_live.json"));
+        using (client)
+        {
+            await client.StrikeDependencyAsync("SPY", 672.5);
+            Assert.Equal("/v1/exposure/strike-dependency/SPY", handler.LastRequest!.RequestUri!.AbsolutePath);
+            Assert.Equal("?strike=672.5", handler.LastRequest.RequestUri.Query);
+
+            await client.StrikeDependencyAsync("SPY", 670);
+            Assert.Equal("?strike=670", handler.LastRequest!.RequestUri!.Query);
+        }
+    }
+
+    [Fact]
+    public async Task StrikeDependencyAsync_StrikeIsLocaleInvariant()
+    {
+        var saved = System.Globalization.CultureInfo.CurrentCulture;
+        try
+        {
+            System.Globalization.CultureInfo.CurrentCulture = new System.Globalization.CultureInfo("de-DE");
+            var (client, handler) = TestClientFactory.Create(body: Fixture("strike_dependency_live.json"));
+            using (client)
+            {
+                await client.StrikeDependencyAsync("QQQ", 612.5);
+                Assert.Equal("?strike=612.5", handler.LastRequest!.RequestUri!.Query);
+            }
+        }
+        finally
+        {
+            System.Globalization.CultureInfo.CurrentCulture = saved;
+        }
+    }
+
+    [Fact]
+    public async Task StrikeDependencyTypedAsync_BindsEveryLevel()
+    {
+        var (client, _) = TestClientFactory.Create(body: Fixture("strike_dependency_live.json"));
+        using (client)
+        {
+            var r = await client.StrikeDependencyTypedAsync("SPY", 670);
+
+            Assert.NotNull(r);
+            Assert.Equal("SPY", r!.Symbol);
+            Assert.Equal("strike_attribution", r.AnalysisType);
+            Assert.Equal(670, r.Strike);
+            Assert.Equal(-8.953165236416016, r.DistanceFromSpotPct);
+            Assert.Equal(187959991.78647596, r.GrossGexUsd);
+            Assert.Equal(-175533366.10899687, r.NetGexUsd);
+            Assert.Equal(6213312.838739557, r.CallGexUsd);
+            Assert.Equal(-181746678.9477364, r.PutGexUsd);
+            Assert.Equal(48, r.ContractCount);
+            Assert.Equal("2026-12-18", r.DominantExpiry);
+            Assert.Equal(22.973602773735948, r.DominantExpirySharePct);
+            Assert.Equal(3, r.ByExpiry!.Count);
+            var row = r.ByExpiry[0];
+            Assert.Equal("2026-11-19", row.Expiry);
+            Assert.Equal("2026-11-19T21:00:00Z", row.ValuationCutoffAt);
+            Assert.Equal("2026-11-19T21:15:00Z", row.LastTradingAt);
+            Assert.Equal("scheduled_regular_session", row.LastTradingStatus);
+            Assert.Null(row.SettlementAt);
+            Assert.Equal("unknown", row.SettlementStatus);
+            Assert.Equal(0, row.CalendarDaysToExpiry);
+            Assert.Equal(0.10318767058863045, row.GrossSharePct);
+            Assert.Equal(0.10318767058863045, row.ShareOfStrikeGrossPct);
+            Assert.Equal(193951.53716304564, row.GrossGexUsd);
+            Assert.Equal(0, row.CallGexUsd);
+            Assert.Equal(1, row.ContractCount);
+            Assert.Null(row.Status);
+            Assert.Equal(1, r.ByExpiry[1].CalendarDaysToExpiry);
+            Assert.Equal("stale", r.DataStatus);
+            Assert.Equal("2026.09.30", r.EndpointVersion);
+            Assert.Equal("fa4", r.DataAsOf!.Node);
+        }
+    }
+
+    [Fact]
+    public async Task ExpiryImpactAsync_Throws403TierRestricted()
+    {
+        var errBody = "{\"status\":\"ERROR\",\"error\":\"tier_restricted\",\"message\":\"Requires Growth.\",\"current_plan\":\"Basic\",\"required_plan\":\"Growth\"}";
+        var (client, _) = TestClientFactory.Create(statusCode: HttpStatusCode.Forbidden, body: errBody);
+        using (client)
+        {
+            var ex = await Assert.ThrowsAsync<TierRestrictedException>(() => client.ExpiryImpactTypedAsync("SPY"));
+            Assert.Equal(403, ex.StatusCode);
+            Assert.Equal("Basic", ex.CurrentPlan);
+            Assert.Equal("Growth", ex.RequiredPlan);
+        }
+    }
+
+    [Fact]
+    public async Task StrikeDependencyAsync_Throws403TierRestricted()
+    {
+        var errBody = "{\"status\":\"ERROR\",\"error\":\"tier_restricted\",\"message\":\"Requires Growth.\",\"current_plan\":\"Free\",\"required_plan\":\"Growth\"}";
+        var (client, _) = TestClientFactory.Create(statusCode: HttpStatusCode.Forbidden, body: errBody);
+        using (client)
+        {
+            var ex = await Assert.ThrowsAsync<TierRestrictedException>(() => client.StrikeDependencyTypedAsync("SPY", 670));
+            Assert.Equal("Growth", ex.RequiredPlan);
+        }
+    }
+
+    [Fact]
+    public async Task ExpiryImpactAsync_UnsupportedSymbolSurfaces422()
+    {
+        var (client, _) = TestClientFactory.Create(statusCode: (HttpStatusCode)422, body: Fixture("error_unsupported_symbol.json"));
+        using (client)
+        {
+            var ex = await Assert.ThrowsAsync<FlashAlphaException>(() => client.ExpiryImpactTypedAsync("AAPL"));
+            Assert.Equal(422, ex.StatusCode);
+            Assert.Equal("This operation currently supports standard SPY and QQQ options.", ex.Message);
+            Assert.Equal("unsupported_symbol", ex.Response!.Value.GetProperty("error").GetString());
+        }
+    }
+
+    [Fact]
+    public async Task StrikeDependencyAsync_UnsupportedSymbolSurfaces422()
+    {
+        var (client, _) = TestClientFactory.Create(statusCode: (HttpStatusCode)422, body: Fixture("error_unsupported_symbol.json"));
+        using (client)
+        {
+            var ex = await Assert.ThrowsAsync<FlashAlphaException>(() => client.StrikeDependencyAsync("AAPL", 200));
+            Assert.Equal(422, ex.StatusCode);
+            Assert.Equal("unsupported_symbol", ex.Response!.Value.GetProperty("error").GetString());
+        }
+    }
+
+    [Fact]
+    public async Task StrikeDependencyAsync_StrikeNotFoundEchoesRequestedStrike()
+    {
+        var (client, _) = TestClientFactory.Create(statusCode: HttpStatusCode.NotFound, body: Fixture("error_strike_not_found.json"));
+        using (client)
+        {
+            var ex = await Assert.ThrowsAsync<NotFoundException>(() => client.StrikeDependencyAsync("SPY", 671.3));
+            Assert.Equal("strike_not_found", ex.Response!.Value.GetProperty("error").GetString());
+            Assert.Equal(671.3, ex.Response.Value.GetProperty("requested_strike").GetDouble());
+        }
+    }
 }

@@ -104,6 +104,50 @@ public sealed partial class FlashAlphaClient
         return e.Deserialize<ExposureOiDiffResponse>(PostSerializerOptions);
     }
 
+    // ── Expiry impact and strike dependency (SPY, QQQ) ────────────────────────
+
+    /// <summary>
+    /// Compares the current SPY or QQQ gamma distribution with the same captured inputs after
+    /// excluding one expiry. Spot, Greeks and open interest are held fixed, so this measures how
+    /// much of today's concentration depends on one maturity. It is not a forecast of post-expiry
+    /// prices, dealer hedging or the next session's chain. Requires Growth or higher. Other symbols
+    /// return 422 <c>unsupported_symbol</c>.
+    /// </summary>
+    /// <param name="symbol"><c>SPY</c> or <c>QQQ</c>.</param>
+    /// <param name="expiry"><c>yyyy-MM-dd</c>, optional. Defaults to the nearest active eligible expiry
+    /// and must be one of <c>available_expiries</c>.</param>
+    /// <param name="limit">1-20, default 5. Sets the rows in <c>impact.largest_gross_reductions</c> and
+    /// <c>impact.strongest_remaining_concentrations</c>; totals and <c>strikes</c> always use the full
+    /// eligible chain.</param>
+    /// <param name="ct">Cancellation token.</param>
+    public Task<JsonElement> ExpiryImpactAsync(string symbol, string? expiry = null, int? limit = null, CancellationToken ct = default)
+    {
+        var p = new Dictionary<string, string?>();
+        if (expiry is not null) p["expiry"] = expiry;
+        if (limit.HasValue) p["limit"] = limit.Value.ToString(CultureInfo.InvariantCulture);
+        return GetAsync($"/v1/exposure/expiry-impact/{Uri.EscapeDataString(symbol)}", p.Count > 0 ? p : null, ct);
+    }
+
+    /// <summary>Strongly-typed variant of <see cref="ExpiryImpactAsync"/>.</summary>
+    public async Task<ExpiryImpactResponse?> ExpiryImpactTypedAsync(string symbol, string? expiry = null, int? limit = null, CancellationToken ct = default)
+        => (await ExpiryImpactAsync(symbol, expiry, limit, ct).ConfigureAwait(false)).Deserialize<ExpiryImpactResponse>(PostSerializerOptions);
+
+    /// <summary>
+    /// Attributes the gamma at one exact observed SPY or QQQ strike to its expiries: does the level
+    /// depend on a single maturity? It reports concentration at that strike, not a support/resistance
+    /// probability. Requires Growth or higher.
+    /// </summary>
+    /// <param name="symbol"><c>SPY</c> or <c>QQQ</c>.</param>
+    /// <param name="strike">Required. Must be an exact listed strike; the request is never snapped to a
+    /// nearby strike (404 <c>strike_not_found</c>).</param>
+    /// <param name="ct">Cancellation token.</param>
+    public Task<JsonElement> StrikeDependencyAsync(string symbol, double strike, CancellationToken ct = default)
+        => GetAsync($"/v1/exposure/strike-dependency/{Uri.EscapeDataString(symbol)}", new Dictionary<string, string?> { ["strike"] = Inv(strike) }, ct);
+
+    /// <summary>Strongly-typed variant of <see cref="StrikeDependencyAsync"/>.</summary>
+    public async Task<StrikeDependencyResponse?> StrikeDependencyTypedAsync(string symbol, double strike, CancellationToken ct = default)
+        => (await StrikeDependencyAsync(symbol, strike, ct).ConfigureAwait(false)).Deserialize<StrikeDependencyResponse>(PostSerializerOptions);
+
     // ── Volatility (additional) ───────────────────────────────────────────────
 
     /// <summary>Per-expiry execution / liquidity score: ATM spread %, OI-weighted spread %, depth. Requires Growth+.</summary>

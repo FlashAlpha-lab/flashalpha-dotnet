@@ -72,6 +72,8 @@ replay any minute back to 2017-01-03.
 | `GET /v1/exposure/zero-dte/{symbol}` | `ZeroDteAsync` (now takes `expiry?`) | Growth+ |
 | `GET /v1/exposure/sheet/{symbol}` | `ExposureSheetAsync` | Growth+ |
 | `GET /v1/exposure/term-structure/{symbol}` | `ExposureTermStructureAsync` | Growth+ |
+| `GET /v1/exposure/expiry-impact/{symbol}` | `ExpiryImpactAsync`: compares the current SPY or QQQ gamma distribution with the same captured inputs after excluding one expiry | Growth+ |
+| `GET /v1/exposure/strike-dependency/{symbol}` | `StrikeDependencyAsync`: attributes the gamma at one exact observed SPY or QQQ strike to its expiries | Growth+ |
 | `GET /v1/exposure/basket` | `ExposureBasketAsync` | Growth+ |
 | `GET /v1/exposure/oi-diff/{symbol}` | `ExposureOiDiffAsync` | Growth+ |
 | `GET /v1/maxpain/{symbol}` | `MaxPainAsync` | Growth+ |
